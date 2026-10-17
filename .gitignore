@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Renders and large binaries stay out of git (manifests point to them)
+productions/*/renders/
+productions/*/frames/
+*.blend1
+*.mp4
+*.mov
+*.exr
+
+# macOS / editors
+.DS_Store
+.obsidian/
+
+# Claude Code local
+.claude/settings.local.json
+.claude/worktrees/
