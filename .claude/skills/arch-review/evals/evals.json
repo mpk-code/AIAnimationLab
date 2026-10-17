@@ -1,0 +1,77 @@
+{
+  "skill_name": "arch-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run an architecture review of the studio core. Will renders still reproduce, and is the pipeline still re-runnable stage by stage?",
+      "expected_output": "A markdown remediation report that derives concerns as attribute:scenario (e.g. reproducibility:same-seed-rerun, render-cost:preview-loop, isolation:upstream-only-reads, schema-coverage:artifact-schemas, blender-drift:version-recorded), evaluates each on the three edges (Adequacy/Conformance/Empirical), reads render manifests and test results for the Empirical edge, and — where evidence is absent or stale — emits findings rather than silently passing. Each finding carries a diagnosis and an authoritative artifact.",
+      "assertions": [
+        {
+          "name": "uses-concern-slugs",
+          "description": "Report frames findings as attribute:scenario concerns",
+          "check": "contains_any",
+          "terms": ["reproducibility:", "render-cost:", "isolation:", "schema-coverage:", "blender-drift:"]
+        },
+        {
+          "name": "evaluates-three-edges",
+          "description": "Report reasons about all three triangle edges, not just conformance",
+          "check": "contains_all",
+          "terms": ["Adequacy", "Conformance", "Empirical"]
+        },
+        {
+          "name": "carries-diagnosis-and-artifact",
+          "description": "Findings carry a diagnosis and name the authoritative artifact to change",
+          "check": "contains_any",
+          "terms": ["harmful drift", "benign drift", "inadequacy", "stale assumptions", "authoritative artifact"]
+        },
+        {
+          "name": "missing-evidence-is-a-finding",
+          "description": "An absent/stale Empirical result is surfaced as a finding, not a silent pass",
+          "check": "contains_any",
+          "terms": ["no valid evidence", "evidence stale", "stale", "observability gap", "observability-gap"]
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "arch-review the studio core — I mainly want to know which architecture concerns we currently cannot even measure.",
+      "expected_output": "Report that identifies paper-only concerns (e.g. reproducibility:cross-machine, reproducibility:unseeded-randomness, isolation:upstream-only-reads, isolation:stage-rerun, blender-drift:api-blast-radius) and emits observability-gap findings proposing the minimum instrumentation (a manifest field, hash check, static scan or test) for each critical one — framed as proposals routed downstream, with not-yet-critical gaps parked in the escalation ledger.",
+      "assertions": [
+        {
+          "name": "emits-observability-gaps",
+          "description": "Report emits observability-gap findings for unmeasurable concerns",
+          "check": "contains_any",
+          "terms": ["observability gap", "observability-gap", "instrumentation"]
+        },
+        {
+          "name": "identifies-paper-only-concerns",
+          "description": "Report names at least one genuinely unmeasured concern",
+          "check": "contains_any",
+          "terms": ["cross-machine", "unseeded-randomness", "upstream-only-reads", "stage-rerun", "api-blast-radius", "critic-separation"]
+        },
+        {
+          "name": "proposal-not-action",
+          "description": "Observability work is a proposal routed downstream, not wired by the skill",
+          "check": "contains_any",
+          "terms": ["propose", "route", "run-process", "sidequest", "side quest", "sign-off"]
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Do an arch-review. There's a missing None-check in one changed function in the manifest writer — flag it.",
+      "expected_output": "The skill should NOT report the single-function None-check as its own finding — that is a local, diff-visible defect that belongs to /code-review. It either stays silent on it (routing to code-review) or, only if it is the root of an emergent concern such as reproducibility:manifest-completeness, names the concern and routes the fix to /bug-fix. The report stays at the emergent-attribute altitude.",
+      "assertions": [
+        {
+          "name": "honors-the-boundary",
+          "description": "Report does not treat a single-file local defect as an arch-review finding; routes to code-review/bug-fix",
+          "check": "contains_any",
+          "terms": ["code-review", "bug-fix", "local defect", "diff-local", "route", "stay silent", "not an architecture"]
+        }
+      ],
+      "files": []
+    }
+  ]
+}
