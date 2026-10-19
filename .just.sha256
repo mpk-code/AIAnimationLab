@@ -1,0 +1,6 @@
+# Expected SHA-256 of each just release archive scripts/install_tool.sh fetches for the Makefile's
+# JUST_VERSION. A download is accepted only when this value, the release's SHA256SUMS and the file
+# agree. On a just bump, replace these lines with the new release's lines for the same archives,
+# from https://github.com/casey/just/releases/download/<version>/SHA256SUMS.
+27f1361f2e4fb5d733837f1a9f80f85c237e5a36c75ee14961e59141713aa4ed  just-1.53.0-aarch64-apple-darwin.tar.gz
+bc345a26d40ae4697cb6b2f2ca04cdf1fbdc8c50eba1b40684c8bf3f98555d72  just-1.53.0-x86_64-apple-darwin.tar.gz

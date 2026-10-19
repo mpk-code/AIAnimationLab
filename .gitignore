@@ -21,3 +21,6 @@ productions/*/frames/
 # Claude Code local
 .claude/settings.local.json
 .claude/worktrees/
+
+# Pinned toolchain (make worktree-init)
+.toolchain/

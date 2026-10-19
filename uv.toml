@@ -1,0 +1,9 @@
+# uv settings for commands run at the repository root outside any project. Inside a project, its
+# own [tool.uv] table is read instead (uv takes the nearest configuration, it does not merge), so
+# pyproject.toml must repeat these (Run 0.2).
+#
+# Only uv's own build of the pinned Python (.python-version) is used, never a machine one.
+python-preference = "only-managed"
+
+# A copy of the Makefile's UV_VERSION: any other uv refuses to run here.
+required-version = "==0.12.24"

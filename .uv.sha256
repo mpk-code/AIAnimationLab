@@ -1,0 +1,6 @@
+# Expected SHA-256 of each uv release archive scripts/install_tool.sh fetches for the Makefile's
+# UV_VERSION. A download is accepted only when this value, the release's sha256.sum and the file
+# agree. On a uv bump, replace these lines with the new release's lines for the same archives, from
+# https://github.com/astral-sh/uv/releases/download/<version>/sha256.sum.
+0c4346de7abdb49495b393b9ec809fe387aa43e586be20fecb972216c1e71732  uv-aarch64-apple-darwin.tar.gz
+4fa82e37cb94767661f532b001e470b67a186c7260e305bd84ddb78fd545c0b6  uv-x86_64-apple-darwin.tar.gz
