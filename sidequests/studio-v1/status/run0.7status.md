@@ -64,7 +64,7 @@ Also accepted: the wiring sits inside `run_render`, so every render writes a man
 | Task 3 — API probe spike → ADR-0001 | Run 0.3 (`d7b93e8`); M5 Max Laptop probe in ADR-0001; **M1 Laptop probe pending** |
 | Task 4 — render harness `render.py --scene --profile preview\|final --out` | Run 0.4 (`8e0eee3`); `tests/test_harness_cli.py` |
 | Task 5 — plain test scene, 48 frames | Run 0.6 (`5c021e4`); `tests/test_plain_scene.py` |
-| Task 6 — manifest writer and contact sheet (every Nth frame on one PNG) | Run 0.5 (`8e0eee3`); wired into every render in Run 0.7 (`<commit>`); `tests/test_render_smoke.py` |
+| Task 6 — manifest writer and contact sheet (every Nth frame on one PNG) | Run 0.5 (`8e0eee3`); wired into every render in Run 0.7 (`b11b130`); `tests/test_render_smoke.py` |
 | Task 7 — smoke test runs the preview render | Run 0.7, `tests/test_render_smoke.py` |
 | Acceptance 1 — same machine, same seed: EEVEE exact pixel hash, Cycles GPU within tolerance | M5 (provisional): EEVEE 48/48 frames hash-equal, max diff 0; Cycles 1 frame max diff 1/255 (73 px), within ADR-0001's ≤ 1/255. **M1: pending** |
 | Acceptance 2 — manifest records model ID, Blender version, machine, git commit, seeds, timings | Schema-valid manifests (`schemas/manifest.schema.json`) from every render; asserted by `test_preview_smoke_manifest_is_valid_and_records_m0_fields` |
@@ -87,6 +87,15 @@ Frame hashes (`pixel_sha256`, the same in runs a and b unless shown):
 
 **M5 Max Laptop, committed tree:** pending the post-commit re-capture.
 **M1 Laptop:** pending; see the next section.
+
+**M5 Max Laptop, clean tree (re-captured by the parent after `/commit`, 2026-10-19; replaces the provisional M5 rows).** Commands: "Post-commit M5 evidence" below, output under the session scratchpad `aial-r07-evidence/`. Both runs of each pair record `git_commit: b11b130619e89d5d05fabb557a3be2737d901944`, `git_dirty: false`, machine "M5 Max Laptop", Blender 5.2.2 LTS.
+
+| Pair | Profile / engine | Frames | Verdict (`compare.py`, exit 0) | Max abs diff | Differing pixels | Pixel sha256 (run a) |
+| --- | --- | --- | --- | --- | --- | --- |
+| eevee-a / eevee-b | preview / BLENDER_EEVEE, seed 0 | 48 | match (exact) | 0 | 0 | frame 1 `1ed82d480a2ffb937e3ce2254d9eb0fcb2a3d19f4ced81b6abce875448212d2d`; frame 48 `e814ab4f2955fb184e80616b87db0aa1b506d676b3072c2adf32b7feb2e152fa` |
+| cycles-a / cycles-b | final / CYCLES Metal GPU, seed 0 | 1 | match (≤ 1/255) | 1/255 | 61 of 2,073,600 | frame 1 `268bde302a921a9b1509df7bf452b13f3ed0cd4d1d01ac2e0d09a6426945cf5a` |
+
+The EEVEE hashes equal the provisional dev-tree values. Cycles again differs by at most 1/255 (61 pixels this time, 73 before): not bit-identical, within ADR-0001's tolerance. Wall time per render: EEVEE 48 frames 11.0 s, Cycles 1 frame 6.1 s.
 
 ## Post-commit M5 evidence (for the parent, after `/commit`)
 Run these from a clean tree. The `git status` line must print nothing, so the manifests read `git_dirty: false`. Manifests land in `$E/<run>/manifest.json`.
@@ -112,28 +121,12 @@ echo "$E"
 Quote both `compare-*.json` files: `matches`, `max_abs_diff`, `runs[].manifest`, `runs[].git_commit`, `runs[].git_dirty`, and the frame 1 and frame 48 hashes. They replace the provisional M5 rows above.
 
 ## M1 Laptop: what to run
-First the user pushes `main` (it is 8+ commits ahead of `origin`). Then, on the M1 Laptop, in zsh:
-```
-cd ~/projects/AIAnimationLab 2>/dev/null || { git clone https://github.com/mpk-code/AIAnimationLab.git ~/projects/AIAnimationLab && cd ~/projects/AIAnimationLab; }
-git checkout main && git pull --ff-only && git rev-parse HEAD && git status --porcelain
-sysctl -n hw.model            # must print MacBookPro18,2 (MACHINE_LABELS in blender/harness/manifest.py); if not, stop and send it
-/Applications/Blender.app/Contents/MacOS/Blender --version | head -1    # expect: Blender 5.2.2 LTS
-make worktree-init            # if doctor below FAILs only on ffmpeg/shellcheck, run `make setup` instead (it runs brew bundle)
-make doctor
-mkdir -p "$TMPDIR/aial-m1"
-/usr/bin/time -p scripts/run_tests.sh > "$TMPDIR/aial-m1/run_tests-1.log" 2>&1; echo "gate 1 exit $?"
-/usr/bin/time -p scripts/run_tests.sh > "$TMPDIR/aial-m1/run_tests-2.log" 2>&1; echo "gate 2 exit $?"   # warm: Cycles kernels cached
-for n in 1 2; do /Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup -noaudio --python-exit-code 1 --python blender/probe/api_probe.py -- --out "$TMPDIR/aial-m1/probe-run$n" --report "$TMPDIR/aial-m1/probe-m1-run$n.json" > "$TMPDIR/aial-m1/probe-run$n.log" 2>&1; echo "probe run $n exit $?"; done
-```
-Then run the "Post-commit M5 evidence" block above unchanged except for its first line: `cd ~/projects/AIAnimationLab`. It writes to `$TMPDIR/aial-r07-evidence`.
+*(Replaced by the parent, 2026-10-19: the command list became `README.md` §New machine plus `scripts/collect_machine_evidence.sh`.)*
 
-**Send back:**
-- the `git rev-parse HEAD` and `git status --porcelain` lines, `hw.model`, and the Blender version line;
-- the `make doctor` output;
-- `$TMPDIR/aial-m1/run_tests-1.log` and `run_tests-2.log` (each ends with `real`);
-- `$TMPDIR/aial-m1/probe-m1-run1.json` and `probe-m1-run2.json`. The `hostname` field holds the OS hostname; it is replaced by "M1 Laptop" when quoted;
-- `$TMPDIR/aial-r07-evidence/compare-eevee.json` and `compare-cycles.json`;
-- every `exit` line printed.
+1. Follow `README.md` §New machine (Xcode command-line tools, Homebrew, Blender 5.2.2, clone, `make setup`). The M1 Laptop's `MacBookPro18,2` is already in `MACHINE_LABELS`.
+2. On a clean tree in the clone: `scripts/collect_machine_evidence.sh`. It runs doctor, the gate twice (timed, cold and warm), the probe twice (hostname replaced by the machine label), and the EEVEE and Cycles render pairs with `compare.py`.
+
+**Send back:** the `~/aial-evidence-m1-laptop-<time>.tar.gz` it prints (`machine.txt`, `doctor.log`, `run_tests-1/2.log`, `probe-run1/2.json`, `renders/*/manifest.json`, `renders/compare-*.json`, `exits.txt`; no frames).
 
 ## Proposed changes to referenced persistent specs (for `/sidequest close`)
 `docs/project-definition.md` §M0 (Tasks `:305-315`, Acceptance `:319-321`): tick all seven Tasks and all three Acceptance boxes, `- [ ]` → `- [x]`, once the M1 evidence passes. Not edited in this run.
