@@ -217,6 +217,7 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 0.7: Integration — smoke, reproducibility, exit gate
 
+- **Status:** PARTIAL 2026-10-19 — awaiting the M1 Laptop evidence; `sidequests/studio-v1/status/run0.7status.md`
 - **Summary:** Wire the manifest writer and contact sheet into `render.py`, add the preview smoke test and the reproducibility test, and produce M0's exit-gate evidence on both Macs.
 - **Scope:** harness integration; render smoke; determinism.
 - **Files/Modules:** `blender/harness/render.py` (integrate: call `write_manifest` and `build_contact_sheet` after render); `blender/harness/compare.py` (new: exact sha256 comparison and per-pixel max-abs-diff with the ADR-0001 tolerance); `tests/test_render_smoke.py` (new, `@pytest.mark.blender`: preview render of the plain scene writes 48 frames, a contact sheet and a valid manifest within a time budget); `tests/test_render_determinism.py` (new, `@pytest.mark.blender`: two same-seed preview runs match exactly; Cycles check at tolerance, skipped with reason if no GPU).
@@ -225,10 +226,10 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 - **Dependencies:** 0.3, 0.4, 0.5, 0.6
 - **Integration points:** consumes 0.4's run result, 0.5's writer, 0.6's scene, 0.3's tolerance. Every later render goes through this path.
 - **Acceptance criteria:**
-  - [ ] Smoke and determinism tests pass on this machine; the status report quotes both runs' frame hashes and manifest paths.
+  - [x] Smoke and determinism tests pass on this machine; the status report quotes both runs' frame hashes and manifest paths.
   - [ ] The user runs `scripts/run_tests.sh` on the second Mac; its output and wall time are quoted in the status report (both under "a few minutes").
   - [ ] The status report has an "Exit gate evidence" section ready to paste into `### Exit gate evidence`, including M0 Tasks 1–2 as already done (commits `b24c5bc`, `eaf4bc7`).
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session
 - **Parallelizable with:** none (integration)
 - **Prompt strategy:** TDD; write the determinism test first, then integrate until it passes.

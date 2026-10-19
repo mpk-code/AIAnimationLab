@@ -38,7 +38,7 @@ MACHINE_LABELS: dict[str, str] = {
 }
 
 # Modes that become 8-bit RGBA without changing any value. Anything else (palette, greyscale,
-# 16-bit) would be converted lossily, so two different frames could hash alike.
+# 16-bit) would be converted lossily, so two different frames could hash or compare alike.
 _HASHABLE_MODES = ("RGBA", "RGB")
 
 
@@ -56,15 +56,23 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def load_rgba(path: Path) -> Image.Image:
+    """Decode a frame as 8-bit RGBA: the pixels both `pixel_sha256` and `compare.py` read.
+
+    RGB images gain opaque alpha. Other modes raise ValueError rather than convert lossily.
+    """
+    with Image.open(path) as image:
+        if image.mode not in _HASHABLE_MODES:
+            raise ValueError(f"{path}: mode {image.mode} is not one of {_HASHABLE_MODES}")
+        return image.convert("RGBA")
+
+
 def pixel_sha256(path: Path) -> str:
     """sha256 of the image's decoded pixels as 8-bit RGBA, row-major: the frame identity.
 
     PNG metadata does not affect it. RGB images hash as RGBA with opaque alpha.
     """
-    with Image.open(path) as image:
-        if image.mode not in _HASHABLE_MODES:
-            raise ValueError(f"{path}: mode {image.mode} is not one of {_HASHABLE_MODES}")
-        return hashlib.sha256(image.convert("RGBA").tobytes()).hexdigest()
+    return hashlib.sha256(load_rgba(path).tobytes()).hexdigest()
 
 
 def collect_git(repo: Path) -> GitState:

@@ -18,3 +18,4 @@ How AIAnimationLab is tested. The canonical runner is `scripts/run_tests.sh` (py
 - Tests that need Blender are marked (`@pytest.mark.blender`) so the unit layer runs without it.
 - Smoke tests must pass on both Macs (M5 Max and M1) in a few minutes.
 - Never assert on a full-resolution final render in the default lane; use the preview profile.
+  One exception: the Cycles reproducibility check (`tests/test_render_determinism.py`) renders 1 frame at the final profile, Cycles' only profile (Run 0.7).

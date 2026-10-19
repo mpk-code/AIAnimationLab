@@ -13,18 +13,15 @@
 
 - [0.1] -> 5.1 | gotcha | .python-version must equal Blender's bundled Python (doctor FAILs otherwise): bump Blender pin, .python-version and Makefile BLENDER_EXPECTED together.
 - [0.2] -> 5.1 | gotcha | fake-bpy-module-5.2==20260730 (pyproject dev group) moves with the Blender pin, alongside .python-version and BLENDER_EXPECTED.
-- [0.2] -> 0.7 | contract | Blender tests take @pytest.mark.blender + the blender_bin fixture (tests/conftest.py); run_tests.sh's blender lane runs them — add no new lane.
-- [0.3] -> 0.7 | decision | EEVEE exact pixel sha256; Cycles Metal max abs diff <= 1/255, denoise off, fixed seed, no animated seed. Measured diff 0 on the M5 Max Laptop (ADR-0001).
 - [0.3] -> 0.7 | deferred | Rerun blender/probe/api_probe.py on the M1 Laptop; quote its JSON in ADR-0001 and lift it from Provisional (expiry: M0 exit).
-- [0.4] -> 0.7 | contract | render.run_render(scene, profile, out, seed, model_id, binary) -> RunResult (blender/harness/run_result.py); CLI needs --scene --profile --out --seed --model-id|AIAL_MODEL_ID.
-- [0.4] -> 0.7 | gotcha | render.py refuses a non-empty <out>/frames/ (exit 1): each determinism run needs its own --out dir.
 - [0.4] -> surface | gotcha | Scenes build into bpy.context.scene after the harness strips factory objects; the factory World is kept and sets the background unless build() replaces scene.world.
 - [0.4] -> quest | deferred | fps (24) and aspect (16:9 resolutions) live in blender/harness/profiles.py until production.yaml exists; then move them there, profiles keep quality only.
-- [0.5] -> 0.7,quest | contract | write_manifest(run_result, out_dir, *, contact_sheet) and build_contact_sheet(frames, every_n, columns, out_path) in blender/harness/; RunResult lives in run_result.py.
-- [0.5] -> 0.7 | contract | Frame identity = blender.harness.manifest.pixel_sha256 (8-bit RGBA via Pillow); compare.py imports it — its values differ from ADR-0001's float-buffer hashes.
-- [0.5] -> 0.7 | gotcha | git_dirty counts untracked files: render output inside the repo must sit under a gitignored path or every manifest reads dirty.
-- [0.6] -> 0.7 | contract | tests/scenes/plain_scene.py: 6 objects, scene.camera set, location keys at 1 and 48; seed jitters box xy, so a different seed must give different frames.
+- [0.5] -> surface | gotcha | git_dirty counts untracked files: render output inside the repo must sit under a gitignored path or every manifest reads dirty.
 - [0.6] -> surface | gotcha | Blender 5.2 has no Action.fcurves; read keys via bpy_extras.anim_utils.action_get_channelbag_for_slot(action, slot).fcurves.
+- [0.7] -> quest | contract | render.run_render itself writes <out>/contact_sheet.png and <out>/manifest.json; callers never call write_manifest/build_contact_sheet directly.
+- [0.7] -> quest | contract | Reproducibility = blender/harness/compare.py compare_runs(out_a, out_b) or its CLI (JSON, exit 0 = match); refuses runs differing in scene/profile/engine/seeds/resolution/samples.
+- [0.7] -> surface | gotcha | Cycles final on Metal is not bit-identical: a same-seed 1080p frame differed by 1/255 in 73 px (M5 Max). Never assert Cycles by hash; use compare.py.
+- [0.7] -> quest | decision | Only the 1-frame Cycles determinism check asserts on final-profile pixels in the default lane (docs/test-strategy.md); other pixel assertions use preview.
 
 <!-- folded: consumed/resolved residues; pre-flight does not read past here -->
 ~ uv/Python pins: uv.toml required-version == Makefile UV_VERSION; pyproject requires-python admits .python-version — held by tests/test_toolchain_pins.py (est. 0.1, enforced 0.2)
@@ -36,3 +33,10 @@
 ~ PNG bytes differ every render (tEXt Date/RenderTime): frame identity is the decoded-pixel hash — manifest.pixel_sha256, held by tests/test_manifest.py (est. 0.3, enforced 0.5)
 ~ machine label: hw.model -> label map MACHINE_LABELS in blender/harness/manifest.py + schema enum, held equal by tests/test_manifest.py (decided 0.3, landed 0.5)
 ~ production_id p-NNNN | t-<slug>, set by the harness in RunResult; model_id required via --model-id/AIAL_MODEL_ID, fixtures pass fixture/<test-name> (decided 0.5)
+~ Blender tests: @pytest.mark.blender + blender_bin fixture (tests/conftest.py), run by run_tests.sh's blender lane — no new lane (est. 0.2, used 0.4–0.7)
+~ EEVEE exact pixel hash, Cycles Metal <= 1/255 (denoise off, fixed seed): compare.py _TOLERANCE_BY_ENGINE (decided 0.3 ADR-0001, landed 0.7)
+~ run_render(scene, profile, out, seed, model_id, binary) -> RunResult lives in blender/harness/render.py (est. 0.4, consumed 0.7)
+~ render.py refuses a non-empty <out>/frames/ (exit 1): every render needs its own --out — held by test_harness_cli::test_a_non_empty_frames_dir_is_refused (est. 0.4)
+~ write_manifest / build_contact_sheet wired inside run_render (est. 0.5, landed 0.7)
+~ frame identity = manifest.pixel_sha256 over manifest.load_rgba (8-bit RGBA, Pillow); compare.py decodes with the same load_rgba; values differ from ADR-0001's float-buffer hashes (est. 0.5, landed 0.7)
+~ plain_scene: 48 frames, seed jitters boxes so another seed changes every frame — held by test_render_determinism::test_eevee_a_different_seed_changes_the_frames (est. 0.6, used 0.7)

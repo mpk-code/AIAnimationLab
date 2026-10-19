@@ -11,6 +11,13 @@ from pathlib import Path
 
 from PIL import Image
 
+# The harness's sheet for every render (Run 0.7 decision 2, user, 2026-10-19): 48 frames give 8
+# tiles in 4 columns by 2 rows. Long productions and final-profile frames need these scaled or the
+# tiles downscaled; revisit when production.yaml exists (docs/plans/followups.md).
+EVERY_N = 6
+COLUMNS = 4
+FILE_NAME = "contact_sheet.png"
+
 
 def build_contact_sheet(frames: Sequence[Path], every_n: int, columns: int, out_path: Path) -> Path:
     """Tile frames[0], frames[every_n], ... into `columns` columns and write a PNG to `out_path`.

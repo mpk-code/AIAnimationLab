@@ -4,8 +4,9 @@
         --out <dir> --seed <int> --model-id <id>
 
 It launches Blender headless on `blender/harness/_inblender.py`, which builds the scene script,
-applies the profile from `blender/harness/profiles.py` and writes frames to `<out>/frames/`.
-`run_render` returns the `RunResult` the manifest writer records.
+applies the profile from `blender/harness/profiles.py` and writes frames to `<out>/frames/`. Then
+`run_render` tiles `<out>/contact_sheet.png` and writes `<out>/manifest.json` (CLAUDE.md §Blender:
+every render writes a manifest), and returns the `RunResult` the manifest records.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ if __package__ in (None, ""):
     # Run as a script, sys.path[0] is blender/harness/; the repo root makes `blender.` importable.
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from blender.harness import profiles
+from blender.harness import contact_sheet, manifest, profiles
 from blender.harness.run_result import FrameRecord, RenderDevice, RunResult, Timings
 
 # CLAUDE.md §Blender names this binary; the BLENDER_BIN environment variable overrides it.
@@ -67,10 +68,11 @@ def production_id_for(scene: Path) -> str:
 def run_render(
     scene: Path, profile: str, out: Path, seed: int, model_id: str, binary: Path
 ) -> RunResult:
-    """Render every frame of `scene` into `out/frames/` and describe the run.
+    """Render every frame of `scene` into `out/frames/`, then write its contact sheet and manifest.
 
     Refuses a non-empty `out/frames/` (Run 0.4 decision 5), so frames from another run are never
-    mixed in or silently overwritten. Raises BlenderFailed when Blender exits non-zero.
+    mixed in or silently overwritten. Raises BlenderFailed when Blender exits non-zero, and
+    manifest.UnknownMachineError on a machine with no label.
     """
     if profile not in profiles.PROFILES:
         raise HarnessError(f"unknown profile {profile!r}; choose from {sorted(profiles.PROFILES)}")
@@ -115,7 +117,7 @@ def run_render(
         facts = json.loads(result_path.read_text(encoding="utf-8"))
 
     device = facts["device"]
-    return RunResult(
+    result = RunResult(
         production_id=production_id,
         scene=scene,
         profile=profile,
@@ -138,6 +140,14 @@ def run_render(
         out_dir=out,
         timings=Timings(wall_s=wall_s, render_s=facts["render_s"]),
     )
+    sheet = contact_sheet.build_contact_sheet(
+        [frame.path for frame in result.frames],
+        contact_sheet.EVERY_N,
+        contact_sheet.COLUMNS,
+        out / contact_sheet.FILE_NAME,
+    )
+    manifest.write_manifest(result, out, contact_sheet=sheet)
+    return result
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
@@ -170,12 +180,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     except BlenderFailed as exc:
         print(f"render.py: {exc}", file=sys.stderr)
         return exc.returncode
-    except HarnessError as exc:
+    except (HarnessError, manifest.UnknownMachineError) as exc:
         print(f"render.py: {exc}", file=sys.stderr)
         return 1
     print(
         f"render.py: {len(result.frames)} frames in {result.out_dir / 'frames'} "
-        f"({result.engine}, {result.timings.wall_s:.1f}s)"
+        f"({result.engine}, {result.timings.wall_s:.1f}s); "
+        f"manifest {result.out_dir / manifest.MANIFEST_NAME}"
     )
     return 0
 
