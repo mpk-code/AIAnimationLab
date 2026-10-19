@@ -195,5 +195,6 @@ def write_manifest(run_result: RunResult, out_dir: Path, *, contact_sheet: Path 
     }
     validate_manifest(doc)
     path = out_dir / MANIFEST_NAME
-    path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    # allow_nan=False: jsonschema passes NaN and inf, which would write invalid JSON.
+    path.write_text(json.dumps(doc, indent=2, sort_keys=True, allow_nan=False) + "\n")
     return path

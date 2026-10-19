@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 import os
+import re
 import tempfile
-from collections.abc import Hashable, Mapping
+from collections.abc import Hashable, Iterator, Mapping
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -36,7 +38,7 @@ class ArtifactValidationError(ValueError):
         self.errors = errors
         where = f"{source}: " if source is not None else ""
         detail = "; ".join(f"{path}: {message}" for path, message in errors)
-        super().__init__(f"{where}{len(errors)} schema error(s): {detail}")
+        super().__init__(f"{where}{len(errors)} validation error(s): {detail}")
 
 
 def _schema_paths() -> dict[str, Path]:
@@ -66,13 +68,49 @@ def _validator(schema: str) -> jsonschema.Draft202012Validator:
     return jsonschema.Draft202012Validator(contents, registry=_registry())
 
 
+# The same rule jsonschema's `json_path` uses, so the guard's paths read like the schema's.
+_PLAIN_KEY = re.compile("^[a-zA-Z][a-zA-Z0-9_]*$")
+
+
+def _json_path(elems: tuple[str | int, ...]) -> str:
+    path = "$"
+    for elem in elems:
+        if isinstance(elem, int):
+            path += f"[{elem}]"
+        elif _PLAIN_KEY.match(elem):
+            path += f".{elem}"
+        else:
+            path += "['" + elem.replace("\\", "\\\\").replace("'", "\\'") + "']"
+    return path
+
+
+def _non_json_values(value: Any, elems: tuple[str | int, ...] = ()) -> Iterator[tuple[str, str]]:
+    # JSON Schema cannot express either rule. jsonschema accepts NaN and inf as numbers, and every
+    # comparison with NaN is false, so `minimum` never rejects NaN; YAML (.nan, .inf, 1.0e+400) and
+    # json.loads (NaN, Infinity, 1e999) both produce them. A YAML mapping key can be a number or a
+    # bool, which json.dumps would silently turn into a string, merging colliding keys.
+    if isinstance(value, float) and not math.isfinite(value):
+        yield _json_path(elems), f"{value!r} is not a finite number"
+    elif isinstance(value, Mapping):
+        for key, item in value.items():
+            if isinstance(key, str):
+                yield from _non_json_values(item, (*elems, key))
+            else:
+                yield _json_path(elems), f"key {key!r} is not a string"
+    elif isinstance(value, list | tuple):
+        for index, item in enumerate(value):
+            yield from _non_json_values(item, (*elems, index))
+
+
 def validate_artifact(obj: Mapping[str, Any], schema: str, *, source: Path | None = None) -> None:
     """Raise `ArtifactValidationError` listing every error unless `obj` matches `schema`.
 
-    `schema` is a file stem in `schemas/`, e.g. "shots" for `schemas/shots.schema.json`.
+    `schema` is a file stem in `schemas/`, e.g. "shots" for `schemas/shots.schema.json`. Numbers
+    must also be finite and mapping keys strings, whatever the schema says.
     """
     errors = sorted(
-        (error.json_path, error.message) for error in _validator(schema).iter_errors(obj)
+        [(error.json_path, error.message) for error in _validator(schema).iter_errors(obj)]
+        + list(_non_json_values(obj))
     )
     if errors:
         raise ArtifactValidationError(source, errors)

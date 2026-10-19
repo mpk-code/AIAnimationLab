@@ -12,6 +12,7 @@ from typing import Any
 
 import jsonschema
 import pytest
+import yaml
 
 from studio.artifacts import (
     SCHEMAS_DIR,
@@ -183,6 +184,80 @@ def test_write_refuses_a_non_finite_number_in_json_and_writes_nothing(tmp_path: 
     with pytest.raises(ValueError):
         write_artifact(doc, tmp_path / "shots.json", "shots")
     assert list(tmp_path.iterdir()) == []
+
+
+def _beats() -> dict[str, Any]:
+    return load_artifact(FIXTURES / "beats" / "valid" / "two_beats.yaml", "beats")
+
+
+def _open_style() -> dict[str, Any]:
+    return load_artifact(FIXTURES / "style" / "valid" / "camera_open_params.yaml", "style")
+
+
+# The guard's own message, so each case can only pass because of it (`minimum` alone catches -inf).
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")], ids=str)
+def test_validate_rejects_a_non_finite_number_naming_its_path(value: float) -> None:
+    doc = _beats()
+    doc["beats"][0]["duration_s"] = value
+    with pytest.raises(ArtifactValidationError) as caught:
+        validate_artifact(doc, "beats")
+    assert ("$.beats[0].duration_s", f"{value!r} is not a finite number") in caught.value.errors
+
+
+def test_a_non_finite_number_in_an_open_style_param_is_rejected() -> None:
+    style = _open_style()
+    style["average_shot_length_s"] = float("nan")
+    with pytest.raises(ArtifactValidationError) as caught:
+        validate_artifact(style, "style")
+    assert caught.value.errors == [("$.average_shot_length_s", "nan is not a finite number")]
+
+
+def test_guard_paths_use_jsonschemas_form_for_non_identifier_keys() -> None:
+    style = _open_style()
+    style["shot rules"] = {"a.b": [1.0, float("inf")], "it's": float("nan")}
+    with pytest.raises(ArtifactValidationError) as caught:
+        validate_artifact(style, "style")
+    assert caught.value.errors == [
+        ("$['shot rules']['a.b'][1]", "inf is not a finite number"),
+        ("$['shot rules']['it\\'s']", "nan is not a finite number"),
+    ]
+
+
+@pytest.mark.parametrize("key", [".nan", "1", "true"])
+def test_a_non_string_yaml_key_is_rejected(tmp_path: Path, key: str) -> None:
+    source = (FIXTURES / "style" / "valid" / "camera_open_params.yaml").read_text()
+    target = tmp_path / "style.yaml"
+    target.write_text(source + f"{key}: 1\n")
+    with pytest.raises(ArtifactValidationError) as caught:
+        load_artifact(target, "style")
+    assert [path for path, message in caught.value.errors if "is not a string" in message] == ["$"]
+
+
+@pytest.mark.parametrize("suffix", [".yaml", ".json"])
+def test_load_rejects_non_finite_numbers(tmp_path: Path, suffix: str) -> None:
+    doc = _beats()
+    doc["beats"][0]["duration_s"] = float("nan")
+    target = tmp_path / f"beats{suffix}"
+    # Both serializers emit NaN by default (.nan / NaN), as a hand-edited file would.
+    target.write_text(yaml.safe_dump(doc) if suffix == ".yaml" else json.dumps(doc))
+    with pytest.raises(ArtifactValidationError) as caught:
+        load_artifact(target, "beats")
+    assert ("$.beats[0].duration_s", "nan is not a finite number") in caught.value.errors
+
+
+def test_write_refuses_a_non_finite_number_in_yaml_and_leaves_files_alone(tmp_path: Path) -> None:
+    target = tmp_path / "beats.yaml"
+    write_artifact(_beats(), target, "beats")
+    before = target.read_bytes()
+    bad = _beats()
+    bad["beats"][1]["sound_cues"][0]["offset_s"] = float("nan")
+    with pytest.raises(ArtifactValidationError) as caught:
+        write_artifact(bad, target, "beats")
+    assert ("$.beats[1].sound_cues[0].offset_s", "nan is not a finite number") in (
+        caught.value.errors
+    )
+    assert target.read_bytes() == before
+    assert [p.name for p in tmp_path.iterdir()] == [target.name]
 
 
 def test_an_unknown_suffix_is_refused(tmp_path: Path) -> None:

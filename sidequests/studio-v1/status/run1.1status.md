@@ -77,7 +77,7 @@ Decisions 1a–9a from the Phase 1 plan were approved by the user, along with th
 - §Scope (line 58), "optional narration-line and sound-cue fields": change to "narration-line and sound-cue fields (`narration: null`, `sound_cues: []` when unused)". Both fields are now required but may be null or empty, so nothing is silently left out.
 
 ## Open Issues
-- not a defect: YAML writing still accepts non-finite numbers (`.inf`/`.nan`). JSON writing refuses them with `allow_nan=False`. A `minimum` does not reject NaN in jsonschema. Candidate fix: a finite-number check in `validate_artifact` if a stage ever computes times.
+- not a defect: YAML writing still accepts non-finite numbers (`.inf`/`.nan`). JSON writing refuses them with `allow_nan=False`. A `minimum` does not reject NaN in jsonschema. Candidate fix: a finite-number check in `validate_artifact` if a stage ever computes times. *(2026-10-19: fixed — `sidequests/studio-v1/fixes/fix-nonfinite-numbers-in-artifacts-2026-10-19.md`; `validate_artifact` now refuses non-finite numbers and non-string keys.)*
 - not a defect: unique ids, contiguous timing and whether a referenced beat exists are outside what JSON Schema can check. They belong to validators (1.5 for shots), as stated in the schemas' descriptions.
 - not a defect: the parameters of the non-visual dimensions are open by design (decision 8a). 1.5 should tighten camera before M1 closes.
 

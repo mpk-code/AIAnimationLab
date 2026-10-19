@@ -190,6 +190,13 @@ def test_invalid_manifest_is_not_written(tmp_path: Path) -> None:
     assert not (tmp_path / "manifest.json").exists()
 
 
+def test_a_non_finite_timing_is_refused_and_not_written(tmp_path: Path) -> None:
+    result = _run_result(tmp_path, timings=Timings(wall_s=float("nan"), render_s=2.25))
+    with pytest.raises(ValueError, match="not JSON compliant"):
+        manifest.write_manifest(result, tmp_path, contact_sheet=None)
+    assert not (tmp_path / "manifest.json").exists()
+
+
 @pytest.mark.parametrize("production_id", ["p-0001", "t-plain_scene"])
 def test_production_id_accepts_production_and_test_forms(
     tmp_path: Path, production_id: str
