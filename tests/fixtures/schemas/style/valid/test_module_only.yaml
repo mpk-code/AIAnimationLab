@@ -1,0 +1,7 @@
+# The smallest visual style: one test-only module and a one-color palette.
+schema_version: 1
+style_id: visual/fixture-minimal
+version: 1
+status: candidate
+palette: ["#336699"]
+modules: [testing/noop]

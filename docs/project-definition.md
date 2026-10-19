@@ -55,7 +55,7 @@ Version 1 covers the whole path from seed to rendered short, built entirely from
 
 **Deferred**
 
-- Sound, music and narration. v1 must be audio-ready: `beats.yaml` and `shots.yaml` carry timing in seconds plus optional narration-line and sound-cue fields, and assembly (stage 8) muxes audio tracks with ffmpeg. Adding a narration stage (script, text-to-speech, timing) later then requires no restructuring.
+- Sound, music and narration. v1 must be audio-ready: `beats.yaml` and `shots.yaml` carry timing in seconds plus narration-line and sound-cue fields, which are always present and may be empty (`null`, `[]`), and assembly (stage 8) muxes audio tracks with ffmpeg. Adding a narration stage (script, text-to-speech, timing) later then requires no restructuring.
 - Editing beyond shot concatenation and simple transitions.
 - Narratives longer than 60 seconds, building toward the 3–7 minute end goal.
 
@@ -183,7 +183,7 @@ These terms mean exactly this in skills, code and conversation. Changes to any o
 
 ## Artifact schemas (sketch)
 
-These are starting field lists. Claude Code formalizes them as JSON Schema in `schemas/` during M0 and M1, and changes after that need an ADR. Times are in seconds, colors are hex, and every artifact carries `schema_version` and `production_id`.
+These are starting field lists. Claude Code formalizes them as JSON Schema in `schemas/` during M0 and M1, and changes after that need an ADR. Times are in seconds, colors are hex, and every artifact carries `schema_version`; every stage artifact also carries `production_id` (a style is a library asset, not part of one production).
 
 `production.yaml` is written at stage 0 and filled in at the gates:
 
@@ -204,6 +204,7 @@ render_profile: preview     # preview | final
 `styles/<dimension>/<style-id>/style.yaml` defines one style. This example is a visual style:
 
 ```yaml
+schema_version: 1
 style_id: visual/cut-paper
 version: 3
 status: active              # candidate | active | retired
@@ -220,6 +221,8 @@ modules: [shaders/toon_ramp, lines/ink]
 `shots.yaml` is locked at Gate C:
 
 ```yaml
+schema_version: 1
+production_id: p-0001
 shots:
   - id: s01
     beat: b01

@@ -1,0 +1,24 @@
+schema_version: 1
+production_id: t-fixture-shots
+shots:
+  - id: s01
+    beat: b01
+    start_s: 0.0
+    duration_s: 1.75
+    framing: fixture-framing
+    camera_move: fixture-move
+    lens_mm: 27.5
+    action: fixture action
+    narration: fixture narration line
+    sound_cues:
+      - { cue: fixture-cue, offset_s: 0.4 }
+  - id: s02
+    beat: b01
+    start_s: 1.75
+    duration_s: 0.9
+    framing: fixture-framing
+    camera_move: fixture-move
+    lens_mm: 27.5
+    action: fixture action
+    narration: null
+    sound_cues: []

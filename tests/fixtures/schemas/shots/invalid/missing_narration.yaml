@@ -1,0 +1,5 @@
+schema_version: 1
+production_id: p-0001
+shots:
+  - { id: s01, beat: b01, start_s: 0.0, duration_s: 2.5, framing: wide, camera_move: static,
+      lens_mm: 35, action: "...", sound_cues: [] }

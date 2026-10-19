@@ -1,0 +1,7 @@
+schema_version: 1
+style_id: visual/cut-paper
+version: 3
+status: active
+palette: ["#1d1a2f"]
+grain: { amount: 0.4 }
+modules: [shaders/toon_ramp]

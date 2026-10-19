@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "_defs.schema.json",
+  "title": "Shared definitions",
+  "description": "Definitions every artifact schema references by $ref (docs/project-definition.md §Artifact schemas; STD-006). Not an artifact itself. Changes after M1 need an ADR.",
+  "$defs": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "production_id": {
+      "description": "p-NNNN for a production; t-<slug> for a test. tests/test_schemas.py holds this pattern equal to the one in manifest.schema.json.",
+      "type": "string",
+      "pattern": "^(p-[0-9]{4}|t-[a-z0-9][a-z0-9_-]*)$"
+    },
+    "hex_color": {
+      "description": "Lowercase #rrggbb, so one color has one spelling.",
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$"
+    },
+    "seconds": { "type": "number", "minimum": 0 },
+    "positive_seconds": { "type": "number", "exclusiveMinimum": 0 },
+    "dimension": {
+      "description": "Creative dimensions a style can belong to (docs/project-definition.md §Style library). Sound is deferred; adding it needs an ADR. style_id and style_ref repeat these names; tests/test_schemas.py holds them equal.",
+      "enum": ["visual", "camera", "storytelling", "characterization", "motion"]
+    },
+    "style_id": {
+      "description": "<dimension>/<name>; the style lives at styles/<dimension>/<name>/style.yaml.",
+      "type": "string",
+      "pattern": "^(visual|camera|storytelling|characterization|motion)/[a-z0-9][a-z0-9-]*$"
+    },
+    "style_ref": {
+      "description": "<style_id>@<version>: one exact version of one style.",
+      "type": "string",
+      "pattern": "^(visual|camera|storytelling|characterization|motion)/[a-z0-9][a-z0-9-]*@[1-9][0-9]*$"
+    },
+    "module_id": {
+      "description": "<group>/<name> of a style module in blender/lib/, e.g. shaders/toon_ramp.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*$"
+    },
+    "beat_id": { "type": "string", "pattern": "^b[0-9]{2,}$" },
+    "shot_id": { "type": "string", "pattern": "^s[0-9]{2,}$" },
+    "narration": {
+      "description": "The narration line for this beat or shot, or null for none. Audio-ready (docs/project-definition.md §Scope).",
+      "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1 }]
+    },
+    "sound_cues": {
+      "description": "Audio-ready (docs/project-definition.md §Scope). offset_s is relative to the start of the beat or shot that holds the cue.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cue", "offset_s"],
+        "properties": {
+          "cue": { "type": "string", "minLength": 1 },
+          "offset_s": { "$ref": "#/$defs/seconds" }
+        }
+      }
+    }
+  }
+}

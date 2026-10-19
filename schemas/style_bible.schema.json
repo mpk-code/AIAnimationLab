@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "style_bible.schema.json",
+  "title": "style_bible.json",
+  "description": "A production's locked styles, written at Gate B (docs/project-definition.md §Pipeline, §Artifact schemas). styles names one exact style version per dimension, or null for none; each key accepts only refs of its own dimension. overrides[dimension] is a partial patch deep-merged over that style's parameters (objects merge, arrays and scalars replace; studio.artifacts.merge_overrides). Changes after M1 need an ADR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "production_id",
+    "styles",
+    "overrides"
+  ],
+  "properties": {
+    "schema_version": {
+      "$ref": "_defs.schema.json#/$defs/schema_version",
+      "const": 1
+    },
+    "production_id": {
+      "$ref": "_defs.schema.json#/$defs/production_id"
+    },
+    "styles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visual",
+        "camera",
+        "storytelling",
+        "characterization",
+        "motion"
+      ],
+      "properties": {
+        "visual": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "_defs.schema.json#/$defs/style_ref",
+              "pattern": "^visual/"
+            }
+          ]
+        },
+        "camera": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "_defs.schema.json#/$defs/style_ref",
+              "pattern": "^camera/"
+            }
+          ]
+        },
+        "storytelling": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "_defs.schema.json#/$defs/style_ref",
+              "pattern": "^storytelling/"
+            }
+          ]
+        },
+        "characterization": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "_defs.schema.json#/$defs/style_ref",
+              "pattern": "^characterization/"
+            }
+          ]
+        },
+        "motion": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "_defs.schema.json#/$defs/style_ref",
+              "pattern": "^motion/"
+            }
+          ]
+        }
+      }
+    },
+    "overrides": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "_defs.schema.json#/$defs/dimension"
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    }
+  }
+}

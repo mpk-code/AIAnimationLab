@@ -1,0 +1,4 @@
+schema_version: 1
+production_id: p-0001
+beats:
+  - { id: beat1, start_s: 0.0, duration_s: 1.0, change: fixture change, narration: null, sound_cues: [] }

@@ -1,0 +1,11 @@
+# docs/project-definition.md §Artifact schemas visual-style example, plus schema_version (STD-006).
+schema_version: 1
+style_id: visual/cut-paper
+version: 3
+status: active              # candidate | active | retired
+palette: ["#1d1a2f", "#e85d3a", "#f2e8cf", "#6a8d73"]
+shading: { model: toon, ramp_steps: 3 }
+line: { enabled: true, weight_px: 2.5 }
+lighting: { key_fill_ratio: 6 }
+forbidden: [gradients, bloom]
+modules: [shaders/toon_ramp, lines/ink]

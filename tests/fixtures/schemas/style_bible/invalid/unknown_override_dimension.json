@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "production_id": "p-0001",
+  "styles": { "visual": "visual/cut-paper@3", "camera": null, "storytelling": null, "characterization": null, "motion": null },
+  "overrides": { "lighting": { "key_fill_ratio": 4 } }
+}

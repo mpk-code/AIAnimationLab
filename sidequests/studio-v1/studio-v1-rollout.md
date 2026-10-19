@@ -264,6 +264,7 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 1.1: Artifact schemas and schema IO
 
+- **Status:** COMPLETE 2026-10-19 — `sidequests/studio-v1/status/run1.1status.md`
 - **Summary:** Formalize `style.yaml`, `style_bible.json`, `shots.yaml` and `beats.yaml` as JSON Schema, with shared definitions, and a single load-and-validate helper that every stage uses on read and write.
 - **Scope:** schemas; host-side schema IO.
 - **Files/Modules:** `schemas/_defs.schema.json` (new: `schema_version`, `production_id`, hex color, seconds); `schemas/style.schema.json`, `schemas/style_bible.schema.json` (one `style_id@version` per dimension + overrides), `schemas/shots.schema.json` (fields per §Artifact schemas, incl. audio-ready `narration`, `sound_cues`), `schemas/beats.schema.json` (new: id, start_s, duration_s, change described, optional narration/sound fields); `studio/artifacts.py` (new: `load_artifact(path, schema)` / `write_artifact(obj, path, schema)`, YAML and JSON); `tests/test_schemas.py` + `tests/fixtures/` (positive and negative fixtures per schema).
@@ -272,9 +273,9 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 - **Dependencies:** M0 complete.
 - **Integration points:** schema field names are the contract for 1.3–1.10 and all later stages; after M1 they change only with an ADR. Route a `contract` line to `quest`.
 - **Acceptance criteria:**
-  - [ ] The project definition's `style.yaml` and `shots.yaml` examples validate; each negative fixture (bad hex, missing `schema_version`, negative duration) fails with a named path.
-  - [ ] `write_artifact` refuses an invalid object and writes nothing.
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] The project definition's `style.yaml` and `shots.yaml` examples validate; each negative fixture (bad hex, missing `schema_version`, negative duration) fails with a named path.
+  - [x] `write_artifact` refuses an invalid object and writes nothing.
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session
 - **Parallelizable with:** 1.2
 - **Prompt strategy:** TDD; fixtures first.

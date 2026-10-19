@@ -1,0 +1,6 @@
+schema_version: 1
+style_id: visual/cut-paper
+version: 3
+status: active
+palette: ["#1d1a2f"]
+modules: [toon_ramp]

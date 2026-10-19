@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "shots.schema.json",
+  "title": "shots.yaml",
+  "description": "A production's shot list, written at stage 4 and locked at Gate C (docs/project-definition.md §Pipeline, §Artifact schemas). Times are absolute seconds from the film's start. The schema checks each shot alone; framing and camera_move vocabulary, unique ids, contiguous timing and the beat's existence are checked by validators against the upstream artifacts. Changes after M1 need an ADR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "production_id", "shots"],
+  "properties": {
+    "schema_version": { "$ref": "_defs.schema.json#/$defs/schema_version", "const": 1 },
+    "production_id": { "$ref": "_defs.schema.json#/$defs/production_id" },
+    "shots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "beat",
+          "start_s",
+          "duration_s",
+          "framing",
+          "camera_move",
+          "lens_mm",
+          "action",
+          "narration",
+          "sound_cues"
+        ],
+        "properties": {
+          "id": { "$ref": "_defs.schema.json#/$defs/shot_id" },
+          "beat": { "$ref": "_defs.schema.json#/$defs/beat_id" },
+          "start_s": { "$ref": "_defs.schema.json#/$defs/seconds" },
+          "duration_s": { "$ref": "_defs.schema.json#/$defs/positive_seconds" },
+          "framing": {
+            "description": "A name from the camera style's vocabulary.",
+            "type": "string",
+            "minLength": 1
+          },
+          "camera_move": {
+            "description": "A name from the camera style's vocabulary.",
+            "type": "string",
+            "minLength": 1
+          },
+          "lens_mm": { "type": "number", "exclusiveMinimum": 0 },
+          "action": { "type": "string", "minLength": 1 },
+          "narration": { "$ref": "_defs.schema.json#/$defs/narration" },
+          "sound_cues": { "$ref": "_defs.schema.json#/$defs/sound_cues" }
+        }
+      }
+    }
+  }
+}

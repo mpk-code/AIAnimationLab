@@ -1,0 +1,16 @@
+schema_version: 1
+production_id: t-fixture-beats
+beats:
+  - id: b01
+    start_s: 0.0
+    duration_s: 3.25
+    change: fixture change one
+    narration: null
+    sound_cues: []
+  - id: b02
+    start_s: 3.25
+    duration_s: 4.0
+    change: fixture change two
+    narration: fixture narration line
+    sound_cues:
+      - { cue: fixture-cue, offset_s: 1.5 }

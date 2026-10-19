@@ -22,6 +22,11 @@
 - [0.7] -> surface | gotcha | Cycles final on Metal is not bit-identical: a same-seed 1080p frame differed by 1/255 in 73 px (M5 Max). Never assert Cycles by hash; use compare.py.
 - [0.7] -> quest | decision | Only the 1-frame Cycles determinism check asserts on final-profile pixels in the default lane (docs/test-strategy.md); other pixel assertions use preview.
 - [0.7] -> surface | gotcha | EEVEE pixels are machine-specific: same scene+seed differ between M5 Max Laptop and M1 Laptop; compare runs from one machine only (ADR-0001).
+- [1.1] -> quest | contract | Artifacts go through studio/artifacts.py: load_artifact(path, stem)/write_artifact(obj, path, stem)/validate_artifact(obj, stem) -> ArtifactValidationError(source, errors=[(json_path, msg)]); .yaml/.yml/.json by suffix, duplicate keys refused, host-side only (no yaml/jsonschema in Blender's Python).
+- [1.1] -> quest | contract | Shared $defs live in schemas/_defs.schema.json (production_id, hex_color lowercase, seconds, positive_seconds, dimension, style_id, style_ref, module_id, beat_id, shot_id, narration, sound_cues); new schemas $ref them by "_defs.schema.json#/$defs/<name>".
+- [1.1] -> 1.3,1.4,1.8 | contract | style params = merge_overrides(style_params(style), bible.overrides.get(dim, {})) then re-validate the merged style as "style"; style_ref <dim>/<name>@<v> -> styles/<dim>/<name>/style.yaml; bible requires all 5 dimension keys (ref or null).
+- [1.1] -> 1.5,1.6,1.9 | deferred | Schemas don't check shot/beat id uniqueness, contiguous timing, beat existence or camera vocabulary — validators own these; 1.5 tightens camera style params in style.schema.json (open for non-visual dims) before M1 close.
+- [1.1] -> 1.10 | deferred | manifest.schema.json should $ref _defs (production_id, style_ref) and validate_manifest use studio.artifacts; until then equality tests in tests/test_schemas.py (and 1.2's) hold the copies equal.
 
 <!-- folded: consumed/resolved residues; pre-flight does not read past here -->
 ~ uv/Python pins: uv.toml required-version == Makefile UV_VERSION; pyproject requires-python admits .python-version — held by tests/test_toolchain_pins.py (est. 0.1, enforced 0.2)

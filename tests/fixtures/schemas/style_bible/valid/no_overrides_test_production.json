@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "production_id": "t-fixture-bible",
+  "styles": {
+    "visual": "visual/fixture-minimal@1",
+    "camera": null,
+    "storytelling": null,
+    "characterization": null,
+    "motion": null
+  },
+  "overrides": {}
+}

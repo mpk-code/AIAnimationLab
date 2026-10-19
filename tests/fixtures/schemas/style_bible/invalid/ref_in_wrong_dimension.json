@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "production_id": "p-0001",
+  "styles": { "visual": "camera/fixture-open@2", "camera": null, "storytelling": null, "characterization": null, "motion": null },
+  "overrides": {}
+}

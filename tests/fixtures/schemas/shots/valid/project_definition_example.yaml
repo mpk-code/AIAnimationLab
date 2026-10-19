@@ -1,0 +1,15 @@
+# docs/project-definition.md §Artifact schemas shots example, plus schema_version and
+# production_id (STD-006).
+schema_version: 1
+production_id: p-0001
+shots:
+  - id: s01
+    beat: b01
+    start_s: 0.0
+    duration_s: 2.5
+    framing: wide           # from the camera style's vocabulary
+    camera_move: static
+    lens_mm: 35
+    action: "..."
+    narration: null         # audio-ready
+    sound_cues: []

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "production_id": "p-0001",
+  "styles": {
+    "visual": "visual/cut-paper@3",
+    "camera": "camera/fixture-open@2",
+    "storytelling": null,
+    "characterization": null,
+    "motion": null
+  },
+  "overrides": { "visual": { "line": { "weight_px": 3.0 } } }
+}

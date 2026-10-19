@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "style.schema.json",
+  "title": "style.yaml",
+  "description": "One versioned style at styles/<dimension>/<name>/style.yaml (docs/project-definition.md §Style library, §Artifact schemas). A library asset, not a production artifact, so it has no production_id. The envelope is schema_version, style_id, version, status and modules; every other top-level key is a style parameter. Parameters are defined per dimension; dimensions other than visual stay open until their first style is authored. Changes after M1 need an ADR.",
+  "type": "object",
+  "required": ["schema_version", "style_id", "version", "status", "modules"],
+  "properties": {
+    "schema_version": { "$ref": "_defs.schema.json#/$defs/schema_version", "const": 1 },
+    "style_id": { "$ref": "_defs.schema.json#/$defs/style_id" },
+    "version": { "type": "integer", "minimum": 1 },
+    "status": { "enum": ["candidate", "active", "retired"] },
+    "modules": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "_defs.schema.json#/$defs/module_id" }
+    }
+  },
+  "if": {
+    "required": ["style_id"],
+    "properties": { "style_id": { "type": "string", "pattern": "^visual/" } }
+  },
+  "then": { "$ref": "#/$defs/visual" },
+  "$defs": {
+    "visual": {
+      "type": "object",
+      "unevaluatedProperties": false,
+      "required": ["palette"],
+      "properties": {
+        "schema_version": true,
+        "style_id": true,
+        "version": true,
+        "status": true,
+        "modules": true,
+        "palette": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "_defs.schema.json#/$defs/hex_color" }
+        },
+        "shading": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["model"],
+          "properties": {
+            "model": { "type": "string", "minLength": 1 },
+            "ramp_steps": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "line": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "weight_px": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "lighting": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "key_fill_ratio": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "forbidden": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
