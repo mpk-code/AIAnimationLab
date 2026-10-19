@@ -196,6 +196,7 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 0.6: Plain test scene
 
+- **Status:** COMPLETE 2026-10-19 — `sidequests/studio-v1/status/run0.6status.md`
 - **Summary:** Write a deliberately plain scene script that satisfies the scene-script contract: a few objects, one light, a camera move, 48 frames, all through `bpy.data`. It is the fixture for smoke and reproducibility tests, not a style.
 - **Scope:** test fixture scene; Blender integration test.
 - **Files/Modules:** `tests/scenes/plain_scene.py` (new: `FRAME_COUNT = 48`, `build(seed)`; a module comment says it is a test fixture exempt from STD-005 because plainness is its purpose; any seeded variation uses `random.Random(seed)` per STD-004); `tests/test_plain_scene.py` (new, `@pytest.mark.blender`: builds in background mode with no `bpy.ops`; asserts object count, one light, camera has location keyframes at frames 1 and 48).
@@ -204,9 +205,9 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 - **Dependencies:** 0.2
 - **Integration points:** consumes the scene-script contract (ADR-0002); consumed by 0.7.
 - **Acceptance criteria:**
-  - [ ] `grep -n "bpy.ops" tests/scenes/plain_scene.py` returns nothing.
-  - [ ] The Blender integration test passes in background mode.
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] `grep -n "bpy.ops" tests/scenes/plain_scene.py` returns nothing.
+  - [x] The Blender integration test passes in background mode.
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session (short; merge into 0.4's session if 0.4 finishes early)
 - **Parallelizable with:** 0.4, 0.5
 - **Prompt strategy:** straight-implementation.

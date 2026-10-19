@@ -22,6 +22,8 @@
 - [0.3] -> 0.7 | decision | EEVEE exact pixel sha256; Cycles Metal max abs diff <= 1/255, denoise off, fixed seed, no animated seed. Measured diff 0 on M5 Max (ADR-0001).
 - [0.3] -> 0.7 | deferred | Rerun blender/probe/api_probe.py on the M1 Mac; quote its JSON in ADR-0001 and lift it from Provisional (expiry: M0 exit).
 - [0.3] -> 0.5 | decision | Manifests name machines by a stable label, never the OS hostname (user, 2026-10-19): "M5 Max Laptop", "M5 Max Mac Studio", "M1"; pick the label mechanism in 0.5.
+- [0.6] -> 0.7 | contract | tests/scenes/plain_scene.py: 6 objects, scene.camera set, location keys at 1 and 48; seed jitters box xy, so a different seed must give different frames.
+- [0.6] -> surface | gotcha | Blender 5.2 has no Action.fcurves; read keys via bpy_extras.anim_utils.action_get_channelbag_for_slot(action, slot).fcurves.
 
 <!-- folded: consumed/resolved residues; pre-flight does not read past here -->
 ~ uv/Python pins: uv.toml required-version == Makefile UV_VERSION; pyproject requires-python admits .python-version — held by tests/test_toolchain_pins.py (est. 0.1, enforced 0.2)
