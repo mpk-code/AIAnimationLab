@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manifest.schema.json",
+  "title": "manifest.json",
+  "description": "What one harness render needs to be reproduced (docs/project-definition.md §Artifact schemas, §M0 Acceptance item 2). Written by blender/harness/manifest.py. Changes after M1 need an ADR.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "production_id",
+    "git_commit",
+    "git_dirty",
+    "model_id",
+    "blender_version",
+    "blender_build_hash",
+    "blender_bin",
+    "machine",
+    "scene",
+    "seeds",
+    "timings",
+    "profile",
+    "engine",
+    "device",
+    "resolution",
+    "samples",
+    "frame_count",
+    "frames",
+    "contact_sheet"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "production_id": {
+      "description": "p-NNNN for a production; t-<slug> for a test render. Set by the harness, never derived by the writer.",
+      "type": "string",
+      "pattern": "^(p-[0-9]{4}|t-[a-z0-9][a-z0-9_-]*)$"
+    },
+    "git_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "git_dirty": {
+      "description": "True when the working tree had uncommitted or untracked changes, so git_commit alone does not reproduce the render.",
+      "type": "boolean"
+    },
+    "model_id": { "type": "string", "minLength": 1 },
+    "blender_version": { "type": "string", "minLength": 1 },
+    "blender_build_hash": { "type": "string", "minLength": 1 },
+    "blender_bin": { "type": "string", "minLength": 1 },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "hardware_model", "chip", "os", "arch"],
+      "properties": {
+        "label": {
+          "description": "Stable machine name, never the OS hostname (user decision, 2026-10-19). Must equal the values of MACHINE_LABELS in blender/harness/manifest.py.",
+          "enum": ["M5 Max Laptop", "M5 Max Mac Studio", "M1 Laptop"]
+        },
+        "hardware_model": { "type": "string", "minLength": 1 },
+        "chip": { "type": "string", "minLength": 1 },
+        "os": { "type": "string", "minLength": 1 },
+        "arch": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scene": {
+      "description": "Scene script path, relative to the repository root when it lies inside it.",
+      "type": "string",
+      "minLength": 1
+    },
+    "seeds": {
+      "type": "object",
+      "required": ["scene"],
+      "additionalProperties": { "type": "integer" },
+      "properties": { "scene": { "type": "integer" } }
+    },
+    "timings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_s", "render_s"],
+      "properties": {
+        "wall_s": { "type": "number", "minimum": 0 },
+        "render_s": { "type": "number", "minimum": 0 }
+      }
+    },
+    "profile": {
+      "description": "Must equal the keys of PROFILES in blender/harness/profiles.py.",
+      "enum": ["preview", "final"]
+    },
+    "engine": { "type": "string", "minLength": 1 },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine_device",
+        "gpu_backend",
+        "cycles_compute_device_type",
+        "cycles_devices"
+      ],
+      "properties": {
+        "engine_device": { "type": "string", "minLength": 1 },
+        "gpu_backend": { "type": "string", "minLength": 1 },
+        "cycles_compute_device_type": { "type": ["string", "null"] },
+        "cycles_devices": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "resolution": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "integer", "minimum": 1 },
+        { "type": "integer", "minimum": 1 }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "samples": { "type": "integer", "minimum": 1 },
+    "frame_count": { "type": "integer", "minimum": 1 },
+    "frames": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "path", "file_sha256", "pixel_sha256"],
+        "properties": {
+          "index": { "type": "integer", "minimum": 1 },
+          "path": {
+            "description": "Relative to the directory holding manifest.json.",
+            "type": "string",
+            "minLength": 1
+          },
+          "file_sha256": {
+            "description": "sha256 of the PNG file bytes; differs on every render because of PNG metadata (ADR-0001).",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "pixel_sha256": {
+            "description": "sha256 of the decoded 8-bit RGBA pixels: the frame identity reproducibility compares (ADR-0001).",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "contact_sheet": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      ]
+    }
+  }
+}

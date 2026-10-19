@@ -39,7 +39,7 @@ Each milestone must pass its gate before the next begins. Blender API probes may
 - **`spec-refs:` was narrower than the persistent paths this quest changes** — resolved 2026-10-19: the user added `schemas/`, `styles/` and `docs/adr/`. Runs also touch `skills/`, `decks/`, `antidefaults/` and `docs/coding-standards.md`; those stay under each run's **Files/Modules** only.
 - **Host-side Python package layout is not in §Repository structure.** Draws, gates, schema IO and the stage runner need a home that is neither Blender-side nor a data directory. Assumption: a top-level `studio/` package for host-side orchestration; `validators/` and `eval/` are their own packages; `blender/` holds Blender-side code plus the host-side harness CLI. Run 0.2 records this in `docs/adr/0002-python-toolchain-and-layout.md`. — Resolve by approving or amending ADR-0002 in Run 0.2.
 - **Git LFS is not installed and there is no `.gitattributes`.** Assumption: renders, frames and contact sheets stay out of git (written under gitignored output dirs or test tmp dirs); manifests reference them by path and sha256. `.gitignore` does not ignore `*.png` globally, so harness output dirs must be under ignored paths. — Resolve by deciding whether contact sheets (small PNGs) should be committed via LFS as review evidence. Deferred 2026-10-19 (Run 0.1): `docs/plans/followups.md` "Git LFS" row.
-- **The harness cannot detect the model ID.** Assumption: `render.py` takes a required `--model-id` (fallback env `AIAL_MODEL_ID`) and fails if neither is set — no silent default. — Resolve by confirming the mechanism in Run 0.5.
+- **The harness cannot detect the model ID.** Assumption: `render.py` takes a required `--model-id` (fallback env `AIAL_MODEL_ID`) and fails if neither is set — no silent default. — Resolve by confirming the mechanism in Run 0.5. Resolved 2026-10-19 (Run 0.5): confirmed — required `--model-id`, fallback env `AIAL_MODEL_ID`, fail if neither; fixture renders pass `fixture/<test-name>`.
 - **"Smoke test passes on both Macs"** needs the M1 Mac. Assumption: the user runs Run 0.7's evidence commands on the second machine and pastes the result. — Resolve by scheduling access to both machines for Run 0.7.
 - **The two contrasting M1 styles are creative decisions not yet made.** Assumption: style A follows the project definition's `visual/cut-paper` sketch (toon ramp + ink line); style B is chosen at Run 1.4 pre-flight to contrast on every validated axis (palette family, shading model, no line, different camera grammar). — Resolve by the user naming style B (and confirming A) before Runs 1.3/1.4.
 - **M1 stage 4 needs `beats.yaml`, but stage 2 is built in M3.** Assumption: Run 1.1 formalizes `schemas/beats.schema.json` now and M1 uses hand-written beat fixtures under `tests/fixtures/`. Changing that schema in M3 then needs an ADR. — Resolve by accepting the early beats schema.
@@ -158,6 +158,7 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 0.4: Harness runner
 
+- **Status:** COMPLETE 2026-10-19 — `sidequests/studio-v1/status/run0.4status.md`
 - **Summary:** Build `blender/harness/render.py`, the host-side CLI that launches Blender headless, loads a scene script, applies a render profile and seed, and renders frames to `<out>/frames/`. Profiles live in one table so nothing else hardcodes render settings.
 - **Scope:** host CLI, in-Blender entry, render profiles.
 - **Files/Modules:** `blender/harness/render.py` (new: argparse `--scene <script> --profile preview|final --out <dir> --seed <int> --model-id <id>`; spawns `$BLENDER_BIN -b --factory-startup --python blender/harness/_inblender.py -- <args>`; returns Blender's exit code; records wall time); `blender/harness/_inblender.py` (new: inserts repo root on `sys.path`, imports the scene script, calls `build(seed)`, applies the profile, sets frame range from `FRAME_COUNT`, renders — the single isolated `bpy.ops.render.render` call per STD-002/003 with a why-comment); `blender/harness/profiles.py` (new: `preview` and `final` as data — engine, resolution, samples, device — single source per STD-001); `tests/test_harness_cli.py` (new: arg validation, profile table, missing `--model-id` fails; one `@pytest.mark.blender` test renders a 2-frame inline scene).
@@ -166,10 +167,10 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 - **Dependencies:** 0.2 (layout, scene-script contract); uses 0.3's engine identifiers if landed, otherwise reads them from `bpy` at runtime and routes a `gotcha` line.
 - **Integration points:** CLI flags above; produces a run-result object (frame paths, timings, seed, profile, engine, Blender version string read from inside Blender) that 0.7 hands to the manifest writer from 0.5. Route a `contract` line to 0.7.
 - **Acceptance criteria:**
-  - [ ] Rendering a 2-frame scene with `--profile preview` writes 2 PNGs to `<out>/frames/` and exits 0.
-  - [ ] `--profile` outside `preview|final`, a missing `--scene`, or a missing model ID exits non-zero with a message.
-  - [ ] `grep -rn "render.render\|filepath" blender/ --include=*.py` finds render calls and output-path writes only in `blender/harness/` and `blender/probe/`.
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] Rendering a 2-frame scene with `--profile preview` writes 2 PNGs to `<out>/frames/` and exits 0.
+  - [x] `--profile` outside `preview|final`, a missing `--scene`, or a missing model ID exits non-zero with a message.
+  - [x] `grep -rn "render.render\|filepath" blender/ --include=*.py` finds render calls and output-path writes only in `blender/harness/` and `blender/probe/`.
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session
 - **Parallelizable with:** 0.5, 0.6
 - **Prompt strategy:** interface-first; the CLI is the contract 0.7 and every later stage consumes.
@@ -177,18 +178,19 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 0.5: Manifest schema, writer and contact sheet
 
+- **Status:** COMPLETE 2026-10-19 — `sidequests/studio-v1/status/run0.5status.md`
 - **Summary:** Define `schemas/manifest.schema.json` and implement the writer that fills it, plus a contact-sheet builder that tiles every Nth frame onto one PNG. Both are pure Python, testable without Blender.
 - **Scope:** manifest schema and writer; contact sheet.
-- **Files/Modules:** `schemas/manifest.schema.json` (new: `schema_version`, `production_id` (test renders use a `t-<scene>` id), `git_commit`, `git_dirty`, `model_id`, `blender_version`, `machine` {hostname, hardware model, chip, os}, `seeds`, `timings` {wall_s, render_s}, `profile`, `engine`, `frames[]` {index, path, sha256}, `contact_sheet`); `blender/harness/manifest.py` (new: collects git/machine facts, hashes frames, validates against the schema before writing); `blender/harness/contact_sheet.py` (new: Pillow; `every_n` and columns as arguments); `tests/test_manifest.py`, `tests/test_contact_sheet.py` (new: synthetic PNGs; schema rejects a manifest missing `model_id`; dirty tree flagged).
+- **Files/Modules:** `schemas/manifest.schema.json` (new: `schema_version`, `production_id` (test renders use a `t-<scene>` id), `git_commit`, `git_dirty`, `model_id`, `blender_version`, `machine` {label, hardware_model, chip, os, arch} (no hostname — user decision 2026-10-19), `seeds`, `timings` {wall_s, render_s}, `profile`, `engine`, `frames[]` {index, path, sha256}, `contact_sheet`); `blender/harness/manifest.py` (new: collects git/machine facts, hashes frames, validates against the schema before writing); `blender/harness/contact_sheet.py` (new: Pillow; `every_n` and columns as arguments); `tests/test_manifest.py`, `tests/test_contact_sheet.py` (new: synthetic PNGs; schema rejects a manifest missing `model_id`; dirty tree flagged).
 - **Spec-refs touched:** `docs/project-definition.md` [Read] §Artifact schemas (`manifest.json`), §M0 Acceptance item 2; `docs/glossary.md` [Read] "Manifest".
 - **Traces to:** `docs/project-definition.md` §M0 Tasks item 6; §M0 Acceptance item 2; `CLAUDE.md` §Blender (manifest fields); STD-006.
 - **Dependencies:** 0.2
 - **Integration points:** `write_manifest(run_result, out_dir) -> Path` and `build_contact_sheet(frames, every_n, out_path)`; manifest field names are the contract for every later run (schema changes after M1 need an ADR). Route a `contract` line to 0.7 and `quest`.
 - **Acceptance criteria:**
-  - [ ] A manifest written from a synthetic run result validates against the schema and contains every §M0 Acceptance item 2 field.
-  - [ ] Frame sha256 values in the manifest match `shasum -a 256` of the files.
-  - [ ] A 48-frame synthetic set with `every_n=6` yields one PNG with 8 tiles.
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] A manifest written from a synthetic run result validates against the schema and contains every §M0 Acceptance item 2 field.
+  - [x] Each frame records `file_sha256` (matches `shasum -a 256` of the file) and `pixel_sha256` (matches an independent decode of the 8-bit RGBA pixels); reproducibility compares `pixel_sha256` (ADR-0001). (Reworded in Run 0.5 from "frame sha256 values match `shasum -a 256`": PNG bytes differ on every render.)
+  - [x] A 48-frame synthetic set with `every_n=6` yields one PNG with 8 tiles.
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session
 - **Parallelizable with:** 0.4, 0.6
 - **Prompt strategy:** TDD; pure functions with crisp expected outputs.

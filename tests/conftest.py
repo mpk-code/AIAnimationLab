@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-# CLAUDE.md §Blender names this path; scripts/run_tests.sh's blender lane repeats it for its banner.
-_DEFAULT_BLENDER_BIN = "/Applications/Blender.app/Contents/MacOS/Blender"
+# scripts/run_tests.sh's blender lane repeats this path for its banner.
+from blender.harness.render import DEFAULT_BLENDER_BIN as _DEFAULT_BLENDER_BIN
 
 
 def _blender_bin() -> Path:
