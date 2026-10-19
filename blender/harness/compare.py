@@ -39,6 +39,7 @@ _SAME_RENDER_FIELDS = (
     "resolution",
     "samples",
     "frame_count",
+    "styles",
 )
 
 
@@ -87,13 +88,22 @@ def _diff_pixels(path_a: Path, path_b: Path) -> tuple[int, int]:
     return int(diff.max()), int(np.count_nonzero(diff.max(axis=-1)))
 
 
+def _render_settings(doc: dict[str, Any]) -> dict[str, Any]:
+    settings = {field: doc[field] for field in _SAME_RENDER_FIELDS}
+    # The bible's content, not its path: one bible copied to two places renders the same frames.
+    bible = doc["style_bible"]
+    settings["style_bible.sha256"] = None if bible is None else bible["sha256"]
+    return settings
+
+
 def compare_runs(out_a: Path, out_b: Path) -> Comparison:
-    """Compare every frame of two renders of the same scene, profile and seed."""
+    """Compare every frame of two renders of the same scene, profile, seed and style bible."""
     doc_a, doc_b = _read_manifest(out_a), _read_manifest(out_b)
-    for field in _SAME_RENDER_FIELDS:
-        if doc_a[field] != doc_b[field]:
+    settings_a, settings_b = _render_settings(doc_a), _render_settings(doc_b)
+    for field, value_a in settings_a.items():
+        if value_a != settings_b[field]:
             raise ComparisonError(
-                f"the renders differ in {field}: {doc_a[field]!r} vs {doc_b[field]!r}"
+                f"the renders differ in {field}: {value_a!r} vs {settings_b[field]!r}"
             )
     engine = doc_a["engine"]
     if engine not in _TOLERANCE_BY_ENGINE:

@@ -33,7 +33,9 @@ build = _plain.build
 
 
 def _render(scene: Path, profile: str, out: Path, seed: int, blender_bin: Path) -> Path:
-    render.run_render(scene, profile, out, seed, "fixture/test_render_determinism", blender_bin)
+    render.run_render(
+        scene, profile, out, seed, "fixture/test_render_determinism", blender_bin, style_bible=None
+    )
     return out
 
 

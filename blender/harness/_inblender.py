@@ -7,15 +7,22 @@ in-Blender half of the run result as JSON to `--result`; render.py adds the host
 Scene-script contract (ADR-0002, Run 0.4 decision 1): the script defines `build(seed: int) -> None`
 and `FRAME_COUNT: int`, and builds into `bpy.context.scene`, which this entry has first emptied of
 the factory objects. The factory World is kept, so it still sets the background.
+
+Style application (Run 1.2): `--style-plan` is the JSON list render.py resolved and validated from
+the style bible on the host (Blender's Python has no jsonschema or yaml). Each entry's target is
+imported before build(); each `apply(params, scene)` runs once, in plan order, after build() and
+before the profile, so no style module can change a render setting the profile owns (STD-003).
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib
 import importlib.util
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -38,7 +45,27 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--style-plan", type=Path, required=True)
     return parser.parse_args(argv)
+
+
+StyleApply = Callable[[dict[str, Any], bpy.types.Scene], None]
+
+
+def _load_style_plan(path: Path) -> list[tuple[StyleApply, dict[str, Any]]]:
+    """Import every planned style module's `apply`; returns (apply, params) in plan order."""
+    plan = json.loads(path.read_text(encoding="utf-8"))
+    loaded = []
+    for entry in plan:
+        module_name, _, attr = entry["target"].partition(":")
+        apply = getattr(importlib.import_module(module_name), attr, None)
+        if not callable(apply):
+            raise RuntimeError(
+                f"style module {entry['module']!r}: {entry['target']} is not a callable "
+                "(blender/lib/registry.py)"
+            )
+        loaded.append((apply, entry["params"]))
+    return loaded
 
 
 def _load_scene_script(path: Path) -> tuple[ModuleType, int]:
@@ -180,11 +207,14 @@ def main() -> None:
     args = _parse_args()
     profile = profiles.PROFILES[args.profile]
     module, frame_count = _load_scene_script(args.scene)
+    style_plan = _load_style_plan(args.style_plan)
     scene = bpy.context.scene
     if scene is None:
         raise RuntimeError("bpy.context.scene is None")
     _empty_factory_scene(scene)
     module.build(args.seed)
+    for apply, params in style_plan:
+        apply(params, scene)
     if scene.camera is None:
         raise RuntimeError(f"{args.scene}: build() left bpy.context.scene without a camera")
     device = _apply_profile(scene, profile, args.seed, frame_count, args.out)

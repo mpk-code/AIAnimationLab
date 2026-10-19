@@ -48,3 +48,7 @@ class RunResult:
     frames: tuple[FrameRecord, ...]
     out_dir: Path
     timings: Timings
+    # dimension -> style_ref ("visual/cut-paper@3") for each non-null entry of the style bible;
+    # empty when the render had no bible.
+    styles: dict[str, str]
+    style_bible: Path | None

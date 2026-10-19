@@ -24,6 +24,8 @@ def _render_dir(
     seed: int = 0,
     size: tuple[int, int] = SIZE,
     note: str = "",
+    styles: dict[str, str] | None = None,
+    style_bible: dict[str, str] | None = None,
 ) -> Path:
     """A fake render: one PNG per entry of `pixels` (pixel (0, 0) set to it, the rest BASE) and a
     manifest holding the fields compare.py reads."""
@@ -53,6 +55,8 @@ def _render_dir(
         "git_dirty": False,
         "machine": {"label": "M5 Max Laptop"},
         "timings": {"wall_s": 1.0, "render_s": 0.5},
+        "styles": styles or {},
+        "style_bible": style_bible,
     }
     (out / manifest.MANIFEST_NAME).write_text(json.dumps(doc))
     return out
@@ -109,8 +113,10 @@ def test_cli_prints_a_summary_and_exits_by_verdict(
         ({"seed": 1}, "seeds"),
         ({"engine": "CYCLES"}, "profile"),
         ({"size": (5, 3)}, "resolution"),
+        ({"styles": {"visual": "visual/fixture-a@2"}}, "styles"),
+        ({"style_bible": {"path": "b.json", "sha256": "b" * 64}}, "style_bible.sha256"),
     ],
-    ids=["seed", "engine", "resolution"],
+    ids=["seed", "engine", "resolution", "styles", "style-bible-content"],
 )
 def test_renders_with_different_settings_are_refused(
     tmp_path: Path, b_kwargs: dict[str, Any], message: str
@@ -119,6 +125,17 @@ def test_renders_with_different_settings_are_refused(
     b = _render_dir(tmp_path / "b", [BASE], **b_kwargs)
     with pytest.raises(compare.ComparisonError, match=message):
         compare.compare_runs(a, b)
+
+
+def test_one_style_bible_at_two_paths_is_comparable(tmp_path: Path) -> None:
+    styles = {"visual": "visual/fixture-a@2"}
+    a = _render_dir(
+        tmp_path / "a", [BASE], styles=styles, style_bible={"path": "a.json", "sha256": "a" * 64}
+    )
+    b = _render_dir(
+        tmp_path / "b", [BASE], styles=styles, style_bible={"path": "b.json", "sha256": "a" * 64}
+    )
+    assert compare.compare_runs(a, b).matches
 
 
 def test_an_engine_without_a_policy_is_refused(tmp_path: Path) -> None:

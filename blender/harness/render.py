@@ -1,12 +1,16 @@
 """The render harness's host CLI: the only way the studio renders (CLAUDE.md §Blender, STD-003).
 
     uv run python blender/harness/render.py --scene <script> --profile preview|final \
-        --out <dir> --seed <int> --model-id <id>
+        --out <dir> --seed <int> --model-id <id> [--style-bible <style_bible.json>]
 
 It launches Blender headless on `blender/harness/_inblender.py`, which builds the scene script,
 applies the profile from `blender/harness/profiles.py` and writes frames to `<out>/frames/`. Then
 `run_render` tiles `<out>/contact_sheet.png` and writes `<out>/manifest.json` (CLAUDE.md §Blender:
 every render writes a manifest), and returns the `RunResult` the manifest records.
+
+With `--style-bible`, every style the bible names is loaded, merged with the bible's overrides and
+validated here on the host, and every module id is looked up in `blender/lib/registry.py`, all
+before Blender launches; `_inblender.py` receives the resolved plan as JSON.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ import tempfile
 import time
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 if __package__ in (None, ""):
     # Run as a script, sys.path[0] is blender/harness/; the repo root makes `blender.` importable.
@@ -28,6 +33,8 @@ if __package__ in (None, ""):
 
 from blender.harness import contact_sheet, manifest, profiles
 from blender.harness.run_result import FrameRecord, RenderDevice, RunResult, Timings
+from blender.lib import registry
+from studio import artifacts
 
 # CLAUDE.md §Blender names this binary; the BLENDER_BIN environment variable overrides it.
 DEFAULT_BLENDER_BIN = "/Applications/Blender.app/Contents/MacOS/Blender"
@@ -35,6 +42,9 @@ MODEL_ID_ENV = "AIAL_MODEL_ID"
 
 _INBLENDER = Path(__file__).resolve().with_name("_inblender.py")
 _MANIFEST_SCHEMA = Path(__file__).resolve().parents[2] / "schemas" / "manifest.schema.json"
+# A style_ref <dimension>/<name>@<version> resolves to STYLES_ROOT/<dimension>/<name>/style.yaml
+# (docs/project-definition.md §Style library).
+STYLES_ROOT = Path(__file__).resolve().parents[2] / "styles"
 
 
 class HarnessError(Exception):
@@ -65,11 +75,68 @@ def production_id_for(scene: Path) -> str:
     return production_id
 
 
+def _resolve_style(style_ref: str, patch: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
+    """Load the style `style_ref` names; returns its module ids and its params with `patch` merged
+    in."""
+    style_id, _, version = style_ref.rpartition("@")
+    path = STYLES_ROOT / style_id / "style.yaml"
+    if not path.is_file():
+        raise HarnessError(f"style bible names {style_ref}, but {path} does not exist")
+    style = artifacts.load_artifact(path, "style")
+    if style["style_id"] != style_id or style["version"] != int(version):
+        raise HarnessError(
+            f"style bible names {style_ref}, but {path} is {style['style_id']}@{style['version']}"
+        )
+    params = artifacts.merge_overrides(artifacts.style_params(style), patch)
+    envelope = {k: v for k, v in style.items() if k in artifacts.STYLE_ENVELOPE_KEYS}
+    # The bible's overrides must leave a valid style.
+    artifacts.validate_artifact({**envelope, **params}, "style", source=path)
+    return list(style["modules"]), params
+
+
+def resolve_style_plan(style_bible: Path) -> tuple[dict[str, str], list[dict[str, Any]]]:
+    """The bible's non-null styles {dimension: style_ref} and the plan `_inblender.py` applies.
+
+    Each plan entry is one module of one style, in bible key order then `modules` order:
+    {dimension, style, module, target, params}. Every module of a style gets the same params.
+    Raises ValueError (ArtifactValidationError and registry.UnknownStyleModule among them) or
+    HarnessError.
+    """
+    bible = artifacts.load_artifact(style_bible, "style_bible")
+    styles = {dim: ref for dim, ref in bible["styles"].items() if ref is not None}
+    unused = sorted(set(bible["overrides"]) - set(styles))
+    if unused:
+        raise HarnessError(f"{style_bible}: overrides name dimensions with no style: {unused}")
+    plan = []
+    for dimension, style_ref in styles.items():
+        modules, params = _resolve_style(style_ref, bible["overrides"].get(dimension, {}))
+        for module_id in modules:
+            plan.append(
+                {
+                    "dimension": dimension,
+                    "style": style_ref,
+                    "module": module_id,
+                    "target": registry.target_for(module_id),
+                    "params": params,
+                }
+            )
+    return styles, plan
+
+
 def run_render(
-    scene: Path, profile: str, out: Path, seed: int, model_id: str, binary: Path
+    scene: Path,
+    profile: str,
+    out: Path,
+    seed: int,
+    model_id: str,
+    binary: Path,
+    *,
+    style_bible: Path | None,
 ) -> RunResult:
     """Render every frame of `scene` into `out/frames/`, then write its contact sheet and manifest.
 
+    With `style_bible`, its styles' modules are applied after the scene builds. The bible, its
+    styles and every module id are checked before Blender launches or `out/frames/` is created.
     Refuses a non-empty `out/frames/` (Run 0.4 decision 5), so frames from another run are never
     mixed in or silently overwritten. Raises BlenderFailed when Blender exits non-zero, and
     manifest.UnknownMachineError on a machine with no label.
@@ -81,6 +148,16 @@ def run_render(
     scene = scene.resolve()
     out = out.resolve()
     production_id = production_id_for(scene)
+    if style_bible is None:
+        styles: dict[str, str] = {}
+        plan: list[dict[str, Any]] = []
+    else:
+        style_bible = style_bible.resolve()
+        try:
+            styles, plan = resolve_style_plan(style_bible)
+        except ValueError as exc:
+            # Schema, parse and unknown-module errors: the render is refused, not crashed.
+            raise HarnessError(f"style bible {style_bible}: {exc}") from exc
     frames_dir = out / "frames"
     if frames_dir.exists() and any(frames_dir.iterdir()):
         raise HarnessError(f"{frames_dir} is not empty; render into a fresh --out directory")
@@ -88,6 +165,8 @@ def run_render(
 
     with tempfile.TemporaryDirectory(prefix="aial-render-") as tmp:
         result_path = Path(tmp) / "inblender_result.json"
+        plan_path = Path(tmp) / "style_plan.json"
+        plan_path.write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
         command = [
             str(binary),
             "-b",
@@ -108,6 +187,8 @@ def run_render(
             str(seed),
             "--result",
             str(result_path),
+            "--style-plan",
+            str(plan_path),
         ]
         start = time.perf_counter()
         completed = subprocess.run(command, check=False)
@@ -139,6 +220,8 @@ def run_render(
         frames=tuple(FrameRecord(index=f["index"], path=Path(f["path"])) for f in facts["frames"]),
         out_dir=out,
         timings=Timings(wall_s=wall_s, render_s=facts["render_s"]),
+        styles=styles,
+        style_bible=style_bible,
     )
     sheet = contact_sheet.build_contact_sheet(
         [frame.path for frame in result.frames],
@@ -161,6 +244,9 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument(
         "--model-id", help=f"model that generated the scene; falls back to ${MODEL_ID_ENV}"
     )
+    parser.add_argument(
+        "--style-bible", type=Path, help="style_bible.json whose styles' modules to apply"
+    )
     args = parser.parse_args(argv)
     # No silent default: the harness cannot detect the model (rollout Input Gaps).
     args.model_id = args.model_id or os.environ.get(MODEL_ID_ENV)
@@ -168,6 +254,8 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         parser.error(f"a model ID is required: pass --model-id or set {MODEL_ID_ENV}")
     if not args.scene.is_file():
         parser.error(f"--scene {args.scene} is not a file")
+    if args.style_bible is not None and not args.style_bible.is_file():
+        parser.error(f"--style-bible {args.style_bible} is not a file")
     return args
 
 
@@ -175,7 +263,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
         result = run_render(
-            args.scene, args.profile, args.out, args.seed, args.model_id, blender_bin()
+            args.scene,
+            args.profile,
+            args.out,
+            args.seed,
+            args.model_id,
+            blender_bin(),
+            style_bible=args.style_bible,
         )
     except BlenderFailed as exc:
         print(f"render.py: {exc}", file=sys.stderr)

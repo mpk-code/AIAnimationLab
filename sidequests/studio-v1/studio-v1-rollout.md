@@ -283,6 +283,7 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 1.2: Style-module contract and harness style application
 
+- **Status:** COMPLETE 2026-10-19 — `sidequests/studio-v1/status/run1.2status.md`
 - **Summary:** Define how a style's `modules:` list resolves to Blender-side code, and extend the harness to apply a style bible's visual modules after the scene builds and record style versions in the manifest.
 - **Scope:** style-module registry; harness flag; manifest fields.
 - **Files/Modules:** `blender/lib/registry.py` (new: maps `shaders/toon_ramp`-style ids to `apply(params: dict, scene) -> None` callables; unknown id is an error); `blender/harness/render.py` + `blender/harness/_inblender.py` (extend: `--style-bible <path>`; resolves each `style_id@version` to `styles/<dimension>/<style-id>/style.yaml` and applies its modules after `build(seed)`); `schemas/manifest.schema.json` + `blender/harness/manifest.py` (extend: `styles` {dimension: `style_id@version`} — pre-M1 change, no ADR needed); `tests/test_style_registry.py` (new: a no-op test module registers and applies in background mode).
@@ -291,9 +292,9 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 - **Dependencies:** M0 complete.
 - **Integration points:** `apply(params, scene)` signature and module-id convention consumed by 1.3, 1.4, 1.7; `--style-bible` flag consumed by 1.9, 1.10. Route `contract` lines to those runs.
 - **Acceptance criteria:**
-  - [ ] Rendering the plain scene with a style bible naming a test module records `styles` in the manifest and calls the module once.
-  - [ ] An unknown module id fails the render before any frame is written.
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] Rendering the plain scene with a style bible naming a test module records `styles` in the manifest and calls the module once.
+  - [x] An unknown module id fails the render before any frame is written.
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session
 - **Parallelizable with:** 1.1
 - **Prompt strategy:** interface-first.

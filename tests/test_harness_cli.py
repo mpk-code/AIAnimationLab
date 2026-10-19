@@ -181,7 +181,13 @@ def test_preview_run_result_records_engine_device_and_blender(
     scene_script: Path, tmp_path: Path, blender_bin: Path
 ) -> None:
     result = render.run_render(
-        scene_script, "preview", tmp_path / "out", 7, "fixture/test_preview_run_result", blender_bin
+        scene_script,
+        "preview",
+        tmp_path / "out",
+        7,
+        "fixture/test_preview_run_result",
+        blender_bin,
+        style_bible=None,
     )
     assert result.production_id == "t-two_frame_scene"
     assert (result.engine, result.device.engine_device) == ("BLENDER_EEVEE", "GPU")
@@ -193,6 +199,7 @@ def test_preview_run_result_records_engine_device_and_blender(
     assert [f.index for f in result.frames] == [1, 2]
     assert all(f.path.is_file() for f in result.frames)
     assert 0 < result.timings.render_s < result.timings.wall_s
+    assert (result.styles, result.style_bible) == ({}, None)
 
 
 @pytest.mark.blender
@@ -200,7 +207,13 @@ def test_final_renders_on_cycles_with_the_metal_gpu(tmp_path: Path, blender_bin:
     scene = tmp_path / "one_frame_scene.py"
     scene.write_text(_TWO_FRAME_SCENE.replace("FRAME_COUNT = 2", "FRAME_COUNT = 1"), "utf-8")
     result = render.run_render(
-        scene, "final", tmp_path / "out", 0, "fixture/test_final_renders_on_cycles", blender_bin
+        scene,
+        "final",
+        tmp_path / "out",
+        0,
+        "fixture/test_final_renders_on_cycles",
+        blender_bin,
+        style_bible=None,
     )
     assert result.engine == "CYCLES"
     assert result.device.engine_device == "GPU"

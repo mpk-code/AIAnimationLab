@@ -25,7 +25,9 @@
     "samples",
     "frame_count",
     "frames",
-    "contact_sheet"
+    "contact_sheet",
+    "styles",
+    "style_bible"
   ],
   "properties": {
     "schema_version": { "const": 1 },
@@ -146,6 +148,34 @@
           "required": ["path", "sha256"],
           "properties": {
             "path": { "type": "string", "minLength": 1 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      ]
+    },
+    "styles": {
+      "description": "dimension -> style_ref for each non-null entry of the style bible; empty when the render had no bible. The key enum and value pattern must equal _defs.schema.json#/$defs/dimension and style_ref (tests hold them).",
+      "type": "object",
+      "propertyNames": { "enum": ["visual", "camera", "storytelling", "characterization", "motion"] },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(visual|camera|storytelling|characterization|motion)/[a-z0-9][a-z0-9-]*@[1-9][0-9]*$"
+      }
+    },
+    "style_bible": {
+      "description": "The style_bible.json the render applied; null when it had none. Its overrides change frames, so styles alone does not reproduce a render.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {
+            "path": {
+              "description": "Relative to the repository root when it lies inside it.",
+              "type": "string",
+              "minLength": 1
+            },
             "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
           }
         }

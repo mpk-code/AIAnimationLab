@@ -185,6 +185,13 @@ def write_manifest(run_result: RunResult, out_dir: Path, *, contact_sheet: Path 
         "contact_sheet": None
         if contact_sheet is None
         else {"path": relative(contact_sheet), "sha256": file_sha256(contact_sheet)},
+        "styles": dict(run_result.styles),
+        "style_bible": None
+        if run_result.style_bible is None
+        else {
+            "path": _repo_relative(run_result.style_bible),
+            "sha256": file_sha256(run_result.style_bible),
+        },
     }
     validate_manifest(doc)
     path = out_dir / MANIFEST_NAME

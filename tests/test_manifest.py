@@ -64,6 +64,8 @@ def _run_result(out_dir: Path, frame_count: int = 3, **overrides: Any) -> RunRes
         "frames": frames,
         "out_dir": out_dir,
         "timings": Timings(wall_s=3.5, render_s=2.25),
+        "styles": {},
+        "style_bible": None,
     }
     fields.update(overrides)
     return RunResult(**fields)
@@ -228,6 +230,38 @@ def test_contact_sheet_is_recorded_relative_with_its_hash(tmp_path: Path) -> Non
         "path": "contact_sheet.png",
         "sha256": manifest.file_sha256(sheet),
     }
+
+
+def test_a_render_without_a_style_bible_records_no_styles(
+    written: tuple[Path, dict[str, Any]],
+) -> None:
+    _, doc = written
+    assert (doc["styles"], doc["style_bible"]) == ({}, None)
+
+
+def test_styles_and_the_style_bible_hash_are_recorded(tmp_path: Path) -> None:
+    bible = tmp_path / "style_bible.json"
+    bible.write_text('{"fixture": true}\n')
+    styles = {"visual": "visual/fixture-a@2", "camera": "camera/fixture-b@1"}
+    result = _run_result(tmp_path / "out", styles=styles, style_bible=bible)
+    doc = json.loads(
+        manifest.write_manifest(result, tmp_path / "out", contact_sheet=None).read_text()
+    )
+    assert doc["styles"] == styles
+    assert doc["style_bible"] == {
+        "path": str(bible.resolve()),
+        "sha256": manifest.file_sha256(bible),
+    }
+
+
+@pytest.mark.parametrize(
+    "styles",
+    [{"visual": "visual/fixture-a"}, {"visual": "visual/fixture-a@0"}, {"visual": 3}],
+    ids=["no-version", "version-zero", "not-a-string"],
+)
+def test_schema_rejects_a_malformed_style_ref(tmp_path: Path, styles: dict[str, Any]) -> None:
+    with pytest.raises(jsonschema.ValidationError):
+        manifest.write_manifest(_run_result(tmp_path, styles=styles), tmp_path, contact_sheet=None)
 
 
 def test_machine_label_comes_from_the_hardware_model() -> None:
