@@ -9,7 +9,7 @@ How AIAnimationLab is tested. The canonical runner is `scripts/run_tests.sh` (py
 | Unit | Pure Python: schema validation, deck draws, validators, manifest writer, metrics | Plain Python, fast, every run |
 | Blender integration | Style modules and scene scripts build correctly in background mode (`blender -b --python ...`) | Headless Blender, no render or a 1-frame render |
 | Render smoke | The harness renders the plain test scene with the preview profile and writes a manifest and contact sheet | Headless Blender, minutes |
-| Reproducibility | Two runs with the same seed match: exact frame hashes for EEVEE, small per-pixel tolerance for Cycles on GPU | Headless Blender; part of the M0 exit gate |
+| Reproducibility | Two runs with the same seed match: exact hashes of the decoded frame pixels for EEVEE (PNG bytes carry render-time metadata — ADR-0001), small per-pixel tolerance for Cycles on GPU | Headless Blender; part of the M0 exit gate |
 | Knob sweeps (E2) | Each shipped knob moves both the artifacts and the frames | Experiment harness in `eval/` |
 
 ## Rules

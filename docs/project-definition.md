@@ -316,7 +316,7 @@ Tasks:
 
 Acceptance:
 
-- [ ] Two runs of the test scene on the same machine with the same seed match. Use exact frame hashes for EEVEE, and a small per-pixel tolerance for Cycles on GPU, which is not guaranteed bit-identical.
+- [ ] Two runs of the test scene on the same machine with the same seed match. Use exact hashes of the decoded frame pixels for EEVEE, and a small per-pixel tolerance for Cycles on GPU, which is not guaranteed bit-identical.
 - [ ] The manifest records model ID, Blender version, machine, git commit, seeds and timings.
 - [ ] The smoke test passes on both Macs in a few minutes.
 

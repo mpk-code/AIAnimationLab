@@ -138,6 +138,7 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 
 ### Run 0.3: Blender API probe spike → ADR-0001
 
+- **Status:** COMPLETE 2026-10-19 — `sidequests/studio-v1/status/run0.3status.md`
 - **Summary:** Write and run a probe that reports the installed Blender's version, render engine identifiers, Metal GPU devices and confirms a scene builds in background mode. It also pre-checks determinism: render one frame twice per engine and compare hashes. Findings go into ADR-0001, which decides the engine/determinism policy M0's exit gate uses.
 - **Scope:** Blender 5.2.2 API surface in background mode; EEVEE and Cycles on Metal.
 - **Files/Modules:** `blender/probe/api_probe.py` (new: runs under `blender -b --python`, prints one JSON report — `bpy.app.version_string`, available `scene.render.engine` enum items, Cycles device type and devices, a `bpy.data`-only scene build, per-engine 1-frame sha256 ×2); `docs/adr/0001-blender-api-baseline.md` (new from `docs/adr/0000-template.md`); `docs/adr/README.md` (index row).
@@ -146,10 +147,10 @@ Routed cross-run handoffs for this quest accumulate in `sidequests/studio-v1/sta
 - **Dependencies:** None — can start immediately (its `scripts/run_tests.sh` check runs once 0.2 has landed).
 - **Integration points:** produces the engine identifiers and the determinism decision (EEVEE exact hash vs tolerance; Cycles tolerance value, e.g. max abs diff ≤ 1/255) — route `contract` lines to 0.4 and 0.7. The probe's own render call is spike code, isolated per STD-002, and is not the harness.
 - **Acceptance criteria:**
-  - [ ] Probe JSON from this machine is quoted in ADR-0001 (machine named); ADR is `Provisional` with review trigger "second Mac probed" if only one machine ran it.
-  - [ ] ADR-0001's Decision names the engine used for exact-hash reproducibility and the Cycles comparison tolerance, with the 2×-render hashes as evidence.
-  - [ ] Any contradiction with `CLAUDE.md` or §M0 Acceptance is listed in the status report as a proposed change, not applied.
-  - [ ] `scripts/run_tests.sh` passes
+  - [x] Probe JSON from this machine is quoted in ADR-0001 (machine named); ADR is `Provisional` with review trigger "second Mac probed" if only one machine ran it.
+  - [x] ADR-0001's Decision names the engine used for exact-hash reproducibility and the Cycles comparison tolerance, with the 2×-render hashes as evidence.
+  - [x] Any contradiction with `CLAUDE.md` or §M0 Acceptance is listed in the status report as a proposed change, not applied.
+  - [x] `scripts/run_tests.sh` passes
 - **Session estimate:** 1 session
 - **Parallelizable with:** 0.1, 0.2
 - **Prompt strategy:** spike-then-implement; the API surface is unverified on 5.2.2.
