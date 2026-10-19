@@ -1,12 +1,12 @@
 # Run 0.7: Integration — smoke, reproducibility, exit gate — status
 
-**Quest:** studio-v1 (feature)  **Date:** 2026-10-19  **Status:** PARTIAL — awaiting the M1 Laptop evidence (gate output and timing, probe JSON); then ADR-0001 moves to Accepted and this run to COMPLETE.
+**Quest:** studio-v1 (feature)  **Date:** 2026-10-19  **Status:** COMPLETE — M1 Laptop evidence received and reviewed 2026-10-19; ADR-0001 Accepted.
 **Spec trace:** `sidequests/studio-v1/studio-v1-rollout.md:218-236` (Run 0.7), `:72-80` (M0 header and exit criteria), `:46` (Input Gap "both Macs"), `:48` (M0 Tasks 1–2 done); `docs/project-definition.md:299-325` (§M0 Tasks and Acceptance); `docs/adr/0001-blender-api-baseline.md` Decision and Consequences (tolerance policy; M1 probe); `docs/adr/0002-python-toolchain-and-layout.md:23-25` (gate lanes, scene-script contract); `docs/test-strategy.md` Layers and Rules; `docs/coding-standards.md` STD-001/003/005/006; `CLAUDE.md` §Blender.
 
 ## Acceptance Criteria Checklist
 - [x] **Smoke and determinism tests pass on this machine (M5 Max Laptop); the status report quotes both runs' frame hashes and manifest paths.** `tests/test_render_smoke.py` (4 tests) and `tests/test_render_determinism.py` (4 tests) pass in the bare gate. The hashes and manifest paths are in "Exit gate evidence" below. They are **provisional**: the tree was dirty (`git_dirty: true`). The post-commit commands below re-capture them.
-- [ ] **The user runs `scripts/run_tests.sh` on the second Mac; its output and wall time are quoted here (both under "a few minutes").** Pending. The commands are in "M1 Laptop: what to run".
-- [ ] **"Exit gate evidence" section ready to paste, including M0 Tasks 1–2 (`b24c5bc`, `eaf4bc7`).** Drafted below. The M5 rows are provisional and the M1 rows are pending.
+- [x] **The user runs `scripts/run_tests.sh` on the second Mac; its output and wall time are quoted here (both under "a few minutes").** M1 Laptop, clean tree at `b11b130`: gate run 1 (cold, includes Cycles' Metal kernel compile) exit 0, `real 183.02` s, blender lane 172.33 s; gate run 2 (warm) exit 0, `real 65.53` s, blender lane 63.65 s. Both runs: unit 61 passed, blender 15 passed. See "M1 Laptop evidence" below.
+- [x] **"Exit gate evidence" section ready to paste, including M0 Tasks 1–2 (`b24c5bc`, `eaf4bc7`).** Below, with M5 Max Laptop and M1 Laptop rows filled from clean-tree runs. It is pasted into the rollout's `### Exit gate evidence` at `/sidequest close`.
 - [x] **`scripts/run_tests.sh` passes.** All lanes ok, exit 0, 46.3 s wall; the blender lane took 43.78 s (output under Test Counts).
 
 ## What Changed
@@ -53,7 +53,7 @@ Also accepted: the wiring sits inside `run_render`, so every render writes a man
 - not a defect: `tests/conftest.py` `_blender_bin()` still repeats `render.blender_bin()` (already noted in Run 0.4). The module-scoped fixtures in the new tests call `render.blender_bin()` directly, because a module-scoped fixture cannot take the function-scoped `blender_bin` fixture.
 
 ## Exit gate evidence
-*(Ready to paste into the rollout's `### Exit gate evidence`. The M5 rows are provisional until the post-commit re-capture; the M1 rows are pending.)*
+*(Ready to paste into the rollout's `### Exit gate evidence` at `/sidequest close`. All rows are from clean-tree runs at `b11b130`; the dev-tree M5 block further down is kept only as history.)*
 
 **M0 — Reproducible render.** A scripted scene renders headless and gives the same output on rerun.
 
@@ -61,14 +61,14 @@ Also accepted: the wiring sits inside `run_render`, so every render writes a man
 | --- | --- |
 | Task 1 — repo skeleton; `docs/project-definition.md` committed; CLAUDE.md names it the source of truth | `b24c5bc` (no run planned; rollout Input Gaps) |
 | Task 2 — `CLAUDE.md` v0: Blender version, `bpy.data` over `bpy.ops`, render only through the harness, doctrine changes need an ADR | `b24c5bc`, `eaf4bc7` |
-| Task 3 — API probe spike → ADR-0001 | Run 0.3 (`d7b93e8`); M5 Max Laptop probe in ADR-0001; **M1 Laptop probe pending** |
+| Task 3 — API probe spike → ADR-0001 | Run 0.3 (`d7b93e8`); M5 Max Laptop and M1 Laptop probes quoted in ADR-0001, now **Accepted** |
 | Task 4 — render harness `render.py --scene --profile preview\|final --out` | Run 0.4 (`8e0eee3`); `tests/test_harness_cli.py` |
 | Task 5 — plain test scene, 48 frames | Run 0.6 (`5c021e4`); `tests/test_plain_scene.py` |
 | Task 6 — manifest writer and contact sheet (every Nth frame on one PNG) | Run 0.5 (`8e0eee3`); wired into every render in Run 0.7 (`b11b130`); `tests/test_render_smoke.py` |
 | Task 7 — smoke test runs the preview render | Run 0.7, `tests/test_render_smoke.py` |
-| Acceptance 1 — same machine, same seed: EEVEE exact pixel hash, Cycles GPU within tolerance | M5 (provisional): EEVEE 48/48 frames hash-equal, max diff 0; Cycles 1 frame max diff 1/255 (73 px), within ADR-0001's ≤ 1/255. **M1: pending** |
+| Acceptance 1 — same machine, same seed: EEVEE exact pixel hash, Cycles GPU within tolerance | **M5 Max Laptop:** EEVEE 48/48 frames pixel-equal, max diff 0; Cycles final 1 frame max diff 1/255 (61 px), within ≤ 1/255. **M1 Laptop:** EEVEE 48/48 pixel-equal, max diff 0; Cycles final 1 frame max diff 1/255 (32 px), within ≤ 1/255. `compare.py` exit 0 for all four pairs. (Across machines EEVEE differs — see ADR-0001 Consequences; the criterion is same-machine.) |
 | Acceptance 2 — manifest records model ID, Blender version, machine, git commit, seeds, timings | Schema-valid manifests (`schemas/manifest.schema.json`) from every render; asserted by `test_preview_smoke_manifest_is_valid_and_records_m0_fields` |
-| Acceptance 3 — smoke test passes on both Macs in a few minutes | M5 Max Laptop: whole gate 46.3 s, blender lane 43.78 s, smoke render 5–7 s. **M1 Laptop: pending** |
+| Acceptance 3 — smoke test passes on both Macs in a few minutes | **M5 Max Laptop:** whole gate 46–58 s (blender lane 44–58 s). **M1 Laptop:** whole gate 183 s cold (first run, Cycles kernel compile) and 66 s warm. Smoke render: 6–11 s (M5), 7.6 s (M1, EEVEE 48 frames). |
 
 **M5 Max Laptop, dev tree (provisional; HEAD `8e0eee338f181ba590873af9d6ead03bebd561c7`, `git_dirty: true`).** Rendered with the commands in "Post-commit M5 evidence" into the scratchpad `/private/tmp/claude-501/-Users-mpkirby-projects-AIAnimationLab/b8f02529-7e31-4167-a7be-13d2b15adcba/scratchpad/r07evidence/`:
 
@@ -85,8 +85,8 @@ Frame hashes (`pixel_sha256`, the same in runs a and b unless shown):
 - All 48 per frame: `…/r07evidence/compare-eevee.json`
 - Cycles frame 1: a `7db1d622180807a9b9c7d010486ec96a0f78b626a6265faca4b78ebe72f99e3a`, b `a7ce8b92392b094acc26c7fafcc6d97456ca5795534b809042ac67376a020ff3`
 
-**M5 Max Laptop, committed tree:** pending the post-commit re-capture.
-**M1 Laptop:** pending; see the next section.
+**M5 Max Laptop, committed tree:** see the clean-tree block below.
+**M1 Laptop:** see "M1 Laptop evidence" below.
 
 **M5 Max Laptop, clean tree (re-captured by the parent after `/commit`, 2026-10-19; replaces the provisional M5 rows).** Commands: "Post-commit M5 evidence" below, output under the session scratchpad `aial-r07-evidence/`. Both runs of each pair record `git_commit: b11b130619e89d5d05fabb557a3be2737d901944`, `git_dirty: false`, machine "M5 Max Laptop", Blender 5.2.2 LTS.
 
@@ -128,12 +128,24 @@ Quote both `compare-*.json` files: `matches`, `max_abs_diff`, `runs[].manifest`,
 
 **Send back:** the `~/aial-evidence-m1-laptop-<time>.tar.gz` it prints (`machine.txt`, `doctor.log`, `run_tests-1/2.log`, `probe-run1/2.json`, `renders/*/manifest.json`, `renders/compare-*.json`, `exits.txt`; no frames).
 
+## M1 Laptop evidence (received 2026-10-19)
+The user ran the collection on the M1 Laptop and sent `aial-m1-evidence-20261019-141723.tar.gz`. The parent extracted it into an empty scratchpad folder and read it as data (nothing executed).
+
+- **Machine:** `hw.model` `MacBookPro18,2` → label "M1 Laptop"; Apple M1 Max, arm64, 64 GB, macOS 26.6.2; Blender 5.2.2 LTS (hash `d13f752e3b9c`); HEAD `b11b130619e89d5d05fabb557a3be2737d901944`, `git status --porcelain` empty.
+- **`make doctor`:** all checks pass (uv 0.12.24, just 1.53.0, Python 3.13.13 uv-managed, Blender 5.2.2, bundled Python 3.13.13, ffmpeg 9.0.2, shellcheck 0.11.0).
+- **Exit codes:** doctor, gate 1, gate 2, probe 1, probe 2, eevee-a/b, cycles-a/b, compare eevee, compare cycles — all 0.
+- **Gate:** run 1 `real 183.02` (blender lane `15 passed … in 172.33s`); run 2 `real 65.53` (blender lane `15 passed … in 63.65s`); unit `61 passed` both times.
+- **Probe (×2):** engines `BLENDER_EEVEE`, `BLENDER_WORKBENCH`, `CYCLES`; Cycles `METAL`, device "Apple M1 Max (GPU - 32 cores)"; EEVEE pixel_sha256 `ea34063d…3ead4b68` and Cycles `f07c4402…1a86deba`, each equal across all four renders, max diff 0. Quoted in ADR-0001.
+- **Harness pairs** (both manifests `git_dirty: false`, machine "M1 Laptop"): EEVEE preview 48 frames, `matches: true`, max diff 0, frame 1 `814a99dae2cca6ed33015e00ecb811c9ee785468968aa440232bad75be77e0eb`, frame 48 `d16bf83016ba53dfb9aa4cb33fe88ca7486725fac189d654e69d96e803c39a1b`; Cycles final 1 frame on "Apple M1 Max (GPU - 32 cores)", `matches: true`, max diff 1/255 in 32 pixels, frame 1 (run a) `d9555b6c611b2422483a80940514560cf3d278588952396c8dad03b66b109cd7`.
+- **No hostname** in any file; the probe's `hostname` field reads "M1 Laptop".
+- **Finding:** EEVEE pixels for the same scene and seed differ between the two Macs (frame 1 `814a99…` here vs `1ed82d…` on the M5 Max Laptop; probe `ea3406…` vs `d7e06e…`), while the 256×256 Cycles probe frame matched across Macs. Recorded in ADR-0001 Consequences: reproducibility is per machine.
+
 ## Proposed changes to referenced persistent specs (for `/sidequest close`)
-`docs/project-definition.md` §M0 (Tasks `:305-315`, Acceptance `:319-321`): tick all seven Tasks and all three Acceptance boxes, `- [ ]` → `- [x]`, once the M1 evidence passes. Not edited in this run.
+`docs/project-definition.md` §M0 (Tasks `:305-315`, Acceptance `:319-321`): tick all seven Tasks and all three Acceptance boxes, `- [ ]` → `- [x]`; the M1 evidence has passed. Not edited in this run.
 
 ## Shared-file edits for the parent to apply
 1. **`docs/plans/followups.md`: add a row.** *(Applied by the parent, 2026-10-19.)* Contact sheets for long productions and the final profile: `blender/harness/contact_sheet.py` fixes `EVERY_N = 6` and `COLUMNS = 4` at native tile size. A 2,400-frame production would tile 400 frames, and a final-profile sheet is 7680×2160 for 4 tiles. Scale `every_n` to frame count, or downscale tiles. **Revisit trigger:** `production.yaml` lands, or the first render over 48 frames.
-2. **`docs/adr/0001-blender-api-baseline.md`, when the M1 evidence arrives.**
+2. **`docs/adr/0001-blender-api-baseline.md`, when the M1 evidence arrives.** *(Applied by the parent, 2026-10-19: both checks passed; ADR-0001 Accepted, with the M1 subsection, the harness-level evidence and a per-machine reproducibility consequence; README row updated.)*
    - **If** both M1 probe runs show EEVEE `pixel_hash_equal: true` and Cycles `max_abs_diff_255 <= 1`, **and** the M1 `compare-*.json` both report `matches: true`:
      - set frontmatter `status: Accepted`;
      - rewrite §Status to "Accepted <date> after the M1 Laptop probe (Run 0.7)", dropping the review trigger and expiry;
@@ -141,7 +153,7 @@ Quote both `compare-*.json` files: `matches`, `max_abs_diff`, `runs[].manifest`,
      - add a "Harness-level evidence (Run 0.7)" paragraph: EEVEE 48-frame preview is exact on both Macs; Cycles final 1920×1080 on the M5 differs by up to 1/255 (73 px), so the tolerance is exercised, not hypothetical (both Macs' compare figures quoted);
      - update the ADR row in `docs/adr/README.md` to Accepted.
    - **If either check fails:** do not accept. ADR-0001's Consequences send it to the tolerance path for both engines, which needs an amendment to §M0 Acceptance. Stop and bring options to the user.
-3. **After ADR-0001 is Accepted:** fold the ledger line `[0.3] -> 0.7 | deferred | Rerun … on the M1 Laptop` to `~ M1 probe: deferred 0.3, landed 0.7 (ADR-0001 Accepted)`. Mark Run 0.7 COMPLETE in the rollout, tick criteria 2–3, and paste "Exit gate evidence" into the rollout's `### Exit gate evidence`.
+3. *(Applied by the parent, 2026-10-19, except pasting into the rollout's Deliverable, which waits for `/sidequest close`.)* **After ADR-0001 is Accepted:** fold the ledger line `[0.3] -> 0.7 | deferred | Rerun … on the M1 Laptop` to `~ M1 probe: deferred 0.3, landed 0.7 (ADR-0001 Accepted)`. Mark Run 0.7 COMPLETE in the rollout, tick criteria 2–3, and paste "Exit gate evidence" into the rollout's `### Exit gate evidence`.
 
 ## Carry-forward
 ```
@@ -206,4 +218,4 @@ real 46.32
 - **E. Complexity concentrations.** `compare.compare_runs` holds the field-equality refusals, the per-engine policy and the decode. It is about 40 lines and covered by 11 unit tests.
 
 ## Next Unblocked Run
-None until the M0 exit gate passes. That needs the M1 evidence, the ADR-0001 acceptance and `/sidequest`-level gate review. After that, Run 1.1 (artifact schemas and schema IO) is next.
+M0's exit gate evidence is complete (this report). Milestone 1 can start: Run 1.1 (artifact schemas and schema IO) and Run 1.2 (style-module contract) are both unblocked and can run in parallel. Run 1.3/1.4 need the user to name the two contrasting styles first (rollout Input Gaps).

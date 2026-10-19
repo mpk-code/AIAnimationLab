@@ -1,7 +1,7 @@
 ---
 id: 0001
 title: Blender 5.2.2 API baseline and render determinism policy
-status: Provisional
+status: Accepted
 date: 2026-10-19
 supersedes: N/A
 superseded-by: N/A
@@ -11,7 +11,7 @@ superseded-by: N/A
 
 ## Status
 
-Provisional. **Review trigger:** the M1 Mac is probed with `blender/probe/api_probe.py` (until then only the M5 Max Laptop has run it). **Expiry:** the M0 exit gate (Run 0.7): by then this ADR becomes Accepted, or is amended with the M1's results.
+Accepted 2026-10-19 after the M1 Laptop probe and the harness-level reproducibility tests (studio-v1 Run 0.7). It was Provisional from Run 0.3 until the second Mac was probed.
 
 ## Context
 
@@ -182,6 +182,164 @@ Probe report, run 1 (verbatim):
 }
 ```
 
+### M1 Laptop (Run 0.7)
+
+The same probe ran on the **M1 Laptop** (Apple M1 Max, arm64, 64 GB, macOS 26.6.2, 32-core GPU) at commit b11b130, twice as separate processes, with the command above. Both runs exited 0. As above, the quoted report carries the machine label in `hostname`.
+
+| Engine | pixel_sha256 (all 4 renders) | max abs diff (1/255) | PNG file sha256 |
+| --- | --- | --- | --- |
+| `BLENDER_EEVEE` (64 TAA samples) | `ea34063d51ad62b844e7b51aeb069c25e5be6af36e4b49f462a8af023ead4b68` | 0 | differs every render |
+| `CYCLES` GPU/Metal (16 samples, adaptive on, denoise off, seed 0) | `f07c44023ffd1119aa8d5cbdb85f5a9a602b098716052b60f6e2f4ab1a86deba` | 0 | differs every render |
+
+The engine list, Metal device setup and `bpy.data`-only scene build match the M5 Max Laptop. The Cycles probe frame is identical on both Macs. The EEVEE probe frame is identical across runs on each Mac but **differs between the two Macs** (`ea3406…` here, `d7e06e…` on the M5 Max Laptop).
+
+Run 1 report:
+
+```json
+{
+  "blender": {
+    "background": true,
+    "build_branch": "blender-v5.2-release",
+    "build_date": "2026-09-15",
+    "build_hash": "d13f752e3b9c",
+    "python": "3.13.13 (main, Apr 25 2025, 12:39:20) [Clang 21.0.0 (clang-2100.0.123.102)]",
+    "version": [
+      5,
+      2,
+      2
+    ],
+    "version_string": "5.2.2 LTS"
+  },
+  "cycles": {
+    "compute_device_type": "METAL",
+    "compute_device_types": [
+      "NONE",
+      "METAL"
+    ],
+    "devices": [
+      {
+        "name": "Apple M1 Max",
+        "type": "CPU",
+        "use": false
+      },
+      {
+        "name": "Apple M1 Max (GPU - 32 cores)",
+        "type": "METAL",
+        "use": true
+      }
+    ]
+  },
+  "determinism": {
+    "BLENDER_EEVEE": {
+      "differing_pixels": 0,
+      "max_abs_diff_255": 0,
+      "pixel_hash_equal": true,
+      "runs": [
+        {
+          "file": "blender_eevee_1.png",
+          "file_sha256": "9e7a41bc61eece38cf7cca6575e8dfdee9e0f2d9feade9af3402d0993aa0f6b4",
+          "pixel_sha256": "ea34063d51ad62b844e7b51aeb069c25e5be6af36e4b49f462a8af023ead4b68",
+          "wall_seconds": 1.041
+        },
+        {
+          "file": "blender_eevee_2.png",
+          "file_sha256": "886bf0f99aa63ccae0c7426d3b6c5c4b4a72decfdc897d98bc383c7269d4f108",
+          "pixel_sha256": "ea34063d51ad62b844e7b51aeb069c25e5be6af36e4b49f462a8af023ead4b68",
+          "wall_seconds": 0.293
+        }
+      ],
+      "settings": {
+        "engine": "BLENDER_EEVEE",
+        "file_format": "PNG RGBA 8-bit",
+        "film_transparent": false,
+        "resolution": [
+          256,
+          256
+        ],
+        "taa_render_samples": 64,
+        "view_transform": "AgX"
+      }
+    },
+    "CYCLES": {
+      "differing_pixels": 0,
+      "max_abs_diff_255": 0,
+      "pixel_hash_equal": true,
+      "runs": [
+        {
+          "file": "cycles_1.png",
+          "file_sha256": "3d088ad108c467b29f8b1e321d866ab11ecb1af1abf31cd5f75bc4357298bc67",
+          "pixel_sha256": "f07c44023ffd1119aa8d5cbdb85f5a9a602b098716052b60f6e2f4ab1a86deba",
+          "wall_seconds": 0.332
+        },
+        {
+          "file": "cycles_2.png",
+          "file_sha256": "1bc6739184e9950ff7b4d14ee9be124e419e98bf1fab8a7d71e8624ec6b7fc2f",
+          "pixel_sha256": "f07c44023ffd1119aa8d5cbdb85f5a9a602b098716052b60f6e2f4ab1a86deba",
+          "wall_seconds": 0.321
+        }
+      ],
+      "settings": {
+        "device": "GPU",
+        "engine": "CYCLES",
+        "file_format": "PNG RGBA 8-bit",
+        "film_transparent": false,
+        "resolution": [
+          256,
+          256
+        ],
+        "samples": 16,
+        "seed": 0,
+        "use_adaptive_sampling": true,
+        "use_animated_seed": false,
+        "use_denoising": false,
+        "view_transform": "AgX"
+      }
+    }
+  },
+  "gpu": {
+    "backend": "METAL",
+    "device_type": "APPLE",
+    "renderer": "Metal API",
+    "vendor": "Apple M1 Max",
+    "version": "1.2"
+  },
+  "machine": {
+    "arch": "arm64",
+    "cpu": "Apple M1 Max",
+    "git_commit": "b11b130619e89d5d05fabb557a3be2737d901944",
+    "hostname": "M1 Laptop",
+    "macos": "26.6.2",
+    "memory_bytes": 68719476736
+  },
+  "probe": "blender/probe/api_probe.py",
+  "render_engines": [
+    "BLENDER_EEVEE",
+    "BLENDER_WORKBENCH",
+    "CYCLES"
+  ],
+  "scene_build": {
+    "built_with": "bpy.data only",
+    "cameras": 1,
+    "lights": 1,
+    "meshes": 2,
+    "objects": 4,
+    "ok": true
+  }
+}
+```
+
+### Harness-level evidence (Run 0.7)
+
+`tests/test_render_determinism.py` and `scripts/collect_machine_evidence.sh` render the 48-frame plain test scene through the harness (`blender/harness/render.py`) and compare runs with `blender/harness/compare.py`. Clean tree at b11b130 on both Macs:
+
+| Check (same machine, seed 0) | M5 Max Laptop | M1 Laptop |
+| --- | --- | --- |
+| EEVEE preview, 48 frames × 2 renders | exact: 48/48 frames pixel-equal, max diff 0 | exact: 48/48 frames pixel-equal, max diff 0 |
+| Cycles final (1920×1080, 256 samples, denoise off), 1 frame × 2 renders | max diff 1/255 in 61 of 2,073,600 pixels: within tolerance | max diff 1/255 in 32 of 2,073,600 pixels: within tolerance |
+| EEVEE frame 1 pixel_sha256 | `1ed82d48…12d2d` | `814a99da…77e0eb` |
+
+So the tolerance for Cycles is exercised, not hypothetical: at the final profile Cycles on Metal is not bit-identical between two same-seed renders on one machine, though it was on the 256×256 probe frame. The harness hashes 8-bit decoded RGBA (`manifest.pixel_sha256`), so its values differ from the probe's float-buffer hashes for the same image.
+
 ## Alternatives considered
 
 | Alternative | Why not chosen |
@@ -200,5 +358,6 @@ Probe report, run 1 (verbatim):
 
   The exception covers re-running this probe (on the M1 Mac and on every Blender version change). It does not cover adding new render calls under `blender/probe/` once the harness exists. CLAUDE.md is unchanged.
 - **The harness (Run 0.4)** must set `scene.cycles.device = "GPU"` and the Cycles preference `compute_device_type = "METAL"` explicitly, and write both into the manifest. Frame comparison hashes decoded pixels, not files.
-- **The reproducibility tests (Run 0.7)** use the EEVEE pixel sha256 and the Cycles max-abs-diff ≤ 1/255 check from the Decision. They rerun this probe on the M1 Mac to resolve this ADR's Provisional status.
-- If the M1 or the 48-frame scene shows EEVEE is not bit-identical, the policy moves to the tolerance path for both engines. That would need an amendment to §M0 Acceptance.
+- **The reproducibility tests (Run 0.7)** use the EEVEE pixel sha256 and the Cycles max-abs-diff ≤ 1/255 check from the Decision, through `blender/harness/compare.py`. Re-run the probe and `scripts/collect_machine_evidence.sh` on every Blender version change and on any new render machine.
+- If a later machine or Blender version shows EEVEE is not bit-identical **on one machine**, the policy moves to the tolerance path for both engines, which needs an amendment to §M0 Acceptance. (Both Macs were bit-identical per machine in Run 0.7.)
+- **Reproducibility is per machine.** EEVEE output for the same scene and seed differs between the M5 Max Laptop and the M1 Laptop, so a render is reproducible exactly only on the machine that made it. Comparisons must pair runs from one machine (every manifest records `machine.label`). This supports the project definition's proposal that one machine renders finals and every experiment set (§Open questions, render hardware).
