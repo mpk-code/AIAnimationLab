@@ -1,6 +1,5 @@
-# uv settings for commands run at the repository root outside any project. Inside a project, its
-# own [tool.uv] table is read instead (uv takes the nearest configuration, it does not merge), so
-# pyproject.toml must repeat these (Run 0.2).
+# The repository's only uv settings. uv ignores the [tool.uv] table of a pyproject.toml next to
+# this file, so pyproject.toml has none (ADR-0002); tests/test_toolchain_pins.py holds both facts.
 #
 # Only uv's own build of the pinned Python (.python-version) is used, never a machine one.
 python-preference = "only-managed"

@@ -26,7 +26,8 @@ done
 
 py_pin="$(tr -d '[:space:]' < "${root}/.python-version" 2> /dev/null)"
 uv="${root}/.toolchain/uv/bin/uv"
-found="$(cd "${root}" && VIRTUAL_ENV='' "${uv}" python find --managed-python --no-project "${py_pin}" 2> /dev/null)"
+# --system: without it uv returns the project's .venv/bin/python, which is not under `uv python dir`.
+found="$(cd "${root}" && VIRTUAL_ENV='' "${uv}" python find --managed-python --no-project --system "${py_pin}" 2> /dev/null)"
 managed="$(cd "${root}" && "${uv}" python dir 2> /dev/null)"
 have="$("${found:-/nonexistent}" -c 'import platform; print(platform.python_version())' 2> /dev/null)"
 if [[ -n "${managed}" && "${found}" == "${managed}"/* && "${have}" == "${py_pin}" ]]; then

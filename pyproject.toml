@@ -1,0 +1,53 @@
+# The studio's one Python project. No [build-system]: uv treats it as a virtual project and installs
+# only the dependencies; tests import repo packages through pytest's `pythonpath`.
+#
+# No [tool.uv] table here: uv ignores [tool.uv] in a pyproject.toml that sits next to a uv.toml, so
+# uv settings live only in uv.toml (ADR-0002). tests/test_toolchain_pins.py holds that.
+[project]
+name = "aianimationlab"
+version = "0.0.0"
+description = "Studio that turns a seed idea into a Blender-rendered short through gated stages."
+# Same minor as .python-version (Blender's bundled Python); tests/test_toolchain_pins.py holds it.
+requires-python = "==3.13.*"
+dependencies = [
+    "jsonschema>=4.26",
+    "numpy>=2.5",
+    "pillow>=13.0",
+    "pyyaml>=6.0.3",
+]
+
+[dependency-groups]
+dev = [
+    # Stubs for Blender's bpy API, generated per Blender minor. Moves with the Blender pin (ADR-0002).
+    "fake-bpy-module-5.2==20260730",
+    "mypy>=2.4",
+    "pytest>=9.1",
+    "ruff>=0.17",
+    "types-jsonschema",
+    "types-pyyaml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["--strict-markers", "-rs"]
+markers = [
+    "blender: needs a Blender binary (BLENDER_BIN); skipped with a reason when it does not resolve",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+# The dev-process skills' scripts are ported from docketScore, not studio code (CLAUDE.md "Two
+# kinds of skills"); the gate does not hold them to the studio's lint rules.
+extend-exclude = [".claude"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "RUF"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["."]
+# Same scope as ruff: not the ported dev-process skills, not tool or venv directories.
+exclude = ['^\.claude/', '^\.venv/', '^\.toolchain/']

@@ -11,5 +11,11 @@
 > ROUTING RULE: an entry exists ONLY if addressed to a future audience — un-routed noise stays
 > in the status report's Open Issues. See the run-process "Carry-forward ledger" section.
 
-- [0.1] -> 0.2 | contract | Pins: Makefile UV_VERSION=0.12.24 (uv.toml required-version copies it), .python-version=3.13.13; pyproject must equal both. Tools: .toolchain/{uv,just}/bin first on PATH.
 - [0.1] -> 5.1 | gotcha | .python-version must equal Blender's bundled Python (doctor FAILs otherwise): bump Blender pin, .python-version and Makefile BLENDER_EXPECTED together.
+- [0.2] -> 0.4,0.5,0.6 | contract | Scene script = build(seed: int) -> None + module FRAME_COUNT: int; bpy.data only, no render/output settings; in-Blender entry puts repo root on sys.path (ADR-0002).
+- [0.2] -> surface | gotcha | uv ignores [tool.uv] in a pyproject next to uv.toml: uv settings live only in uv.toml; tests/test_toolchain_pins.py guards it.
+- [0.2] -> 5.1 | gotcha | fake-bpy-module-5.2==20260730 (pyproject dev group) moves with the Blender pin, alongside .python-version and BLENDER_EXPECTED.
+- [0.2] -> 0.7 | contract | Blender tests take @pytest.mark.blender + the blender_bin fixture (tests/conftest.py); run_tests.sh's blender lane runs them — add no new lane.
+
+<!-- folded: consumed/resolved residues; pre-flight does not read past here -->
+~ uv/Python pins: uv.toml required-version == Makefile UV_VERSION; pyproject requires-python admits .python-version — held by tests/test_toolchain_pins.py (est. 0.1, enforced 0.2)

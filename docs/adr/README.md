@@ -8,4 +8,4 @@ Files are `NNNN-slug.md`, numbered in order. Copy `0000-template.md` to start on
 
 | ADR | Title | Status |
 | --- | --- | --- |
-| — | — | — |
+| [0002](0002-python-toolchain-and-layout.md) | Python toolchain, test gate, host-side package layout and scene-script contract | Proposed |

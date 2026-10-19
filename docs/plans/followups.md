@@ -10,6 +10,7 @@ A thin index of things deliberately deferred until a trigger fires. Each row poi
 | --- | --- | --- | --- |
 | Pin Blender version | Before E1 runs | Write an ADR pinning the version; record it in the manifest schema | `docs/project-definition.md` §Open questions |
 | Git LFS | First binary we want committed (golden reference frames, .blend assets, finished films, review contact sheets) | Install git-lfs, add `.gitattributes`, add to `Brewfile` + `scripts/doctor.sh` | `sidequests/studio-v1/status/run0.1status.md` |
+| shellcheck lane in the gate | Next run that adds or changes a `scripts/*.sh` file | Add `shellcheck scripts/*.sh` to `scripts/run_tests.sh`'s static lane and a line to ADR-0002 | `sidequests/studio-v1/status/run0.2status.md` |
 
 ## Closed
 

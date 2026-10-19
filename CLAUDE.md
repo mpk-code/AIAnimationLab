@@ -17,6 +17,7 @@ Deferred items with revisit triggers live in `docs/plans/followups.md`.
 
 ## Blender
 
+- Bootstrap a machine with `make setup`, a worktree with `make worktree-init`; check it with `make doctor`. `make` only bootstraps; `just` runs tasks.
 - Blender **5.2.2 LTS** (`/Applications/Blender.app/Contents/MacOS/Blender`). Not yet pinned; record the version in every manifest. Pin before E1.
 - Prefer `bpy.data` over `bpy.ops`. `bpy.ops` depends on UI context and breaks in background mode.
 - **Render only through the harness** (`blender/harness/render.py --scene <script> --profile preview|final --out <dir>`). Never call render operators ad hoc.
@@ -44,7 +45,7 @@ Deferred items with revisit triggers live in `docs/plans/followups.md`.
 
 ## Tests
 
-`scripts/run_tests.sh` is the canonical runner (pytest + ruff + mypy; created in M0). Don't construct ad-hoc pytest command lines for gate decisions. Render smoke tests run the preview profile through the harness.
+`scripts/run_tests.sh` is the canonical runner (lanes in order: doctor → `uv lock --check` → ruff/mypy → unit → blender); `just ci` is its alias, never a second gate. Don't construct ad-hoc pytest command lines for gate decisions. Render smoke tests run the preview profile through the harness.
 
 ## Shell
 

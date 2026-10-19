@@ -10,3 +10,19 @@ default:
 # Read-only report of every prerequisite and pin
 doctor:
     @bash scripts/doctor.sh
+
+# The gate: every lane of scripts/run_tests.sh, in order (ADR-0002). An alias, not a second gate.
+ci:
+    @bash scripts/run_tests.sh
+
+# Unit lane only (no Blender), for the per-edit loop
+test:
+    @bash scripts/run_tests.sh unit
+
+# ruff check and ruff format --check (the static lane's first half)
+lint:
+    @bash scripts/run_tests.sh ruff
+
+# mypy (the static lane's second half)
+typecheck:
+    @bash scripts/run_tests.sh mypy
