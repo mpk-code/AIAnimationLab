@@ -95,7 +95,8 @@ for engine in eevee cycles; do
 done
 
 step "Packaging (manifests, compare JSON, logs; no frames)"
-rm -rf "${ev}"/*/frames "${ev}"/*/contact_sheet.png
+# __pycache__: Blender byte-compiles the frame-1 wrapper beside it (its Python ignores PYTHONDONTWRITEBYTECODE).
+rm -rf "${ev}"/*/frames "${ev}"/*/contact_sheet.png "${ev}/__pycache__"
 tarball="${out}.tar.gz"
 tar -czf "${tarball}" -C "$(dirname "${out}")" "$(basename "${out}")"
 echo
